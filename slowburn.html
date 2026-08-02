@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Slow Burn — Privacy &amp; Support</title>
+<style>
+body{max-width:680px;margin:40px auto;padding:0 20px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color:#FFF8F1;background:#3A0E2E;line-height:1.6}
+h1{font-size:26px} h2{font-size:18px;margin-top:28px} a{color:#FF8FC7}
+.muted{color:#C0A9B4;font-size:14px}
+code{background:#5A1440;padding:1px 5px;border-radius:4px;font-size:13px}
+ul{padding-left:20px} li{margin:4px 0}
+</style>
+</head>
+<body>
+<h1>Slow Burn — Privacy Policy &amp; Support</h1>
+<p class="muted">Last updated: 2 August 2026</p>
+
+<p>Slow Burn is a guided intimacy program built on Sensate Focus — six unhurried stages you move
+through on your own, or with a partner. It is a wellness and education tool, not medical advice.</p>
+
+<h2>Support</h2>
+<p>Questions, bugs, or anything at all? Email
+<a href="mailto:jonathanbbiles@gmail.com">jonathanbbiles@gmail.com</a>. We read every one.</p>
+
+<h2>The short version</h2>
+<p><strong>Slow Burn collects nothing about you.</strong> There is no account, no sign-in, no ads, no
+analytics, no tracking, and no third-party advertising or analytics SDK of any kind. Nothing you
+enter is ever sent to us, because there is no server of ours for it to be sent to.</p>
+
+<h2>What stays on your device, always</h2>
+<p>All of this is saved only in the app's own storage on your phone, and is never transmitted — not
+to us, not to anyone:</p>
+<ul>
+<li>Your name and pronouns, and anything you entered about your partner</li>
+<li>Your gender, orientation, relationship structure and body-area wording preferences</li>
+<li>How many sessions you have logged, and at which stage</li>
+<li><strong>The free-text private note you write after each session</strong></li>
+</ul>
+<p>Deleting the app deletes all of it.</p>
+
+<h2>Pairing two phones — end-to-end encrypted</h2>
+<p>The only feature that uses the network at all is live pairing, where two people run the program
+together on their own phones. It exists so the two phones can do two things: open the next stage
+only when <em>both</em> people have privately confirmed they are ready, and show each of you the
+reflections you <em>both</em> named.</p>
+
+<p>That link is <strong>end-to-end encrypted</strong>. When you pair, the two phones perform an
+ephemeral ECDH P-256 key exchange, publishing only their public keys. Each phone derives the shared
+secret itself — <strong>the secret is never transmitted, in any form</strong> — and that secret,
+combined with your pair code, produces an AES-256-GCM key that only your two phones hold. The pair
+code itself never travels. Everything sent afterwards is ciphertext.</p>
+
+<p><strong>What crosses between the two phones, encrypted:</strong> a number from 0 to 6 for the
+stage you have confirmed you are ready for, and the positions of the reflection chips you tapped
+(sent as list positions, never as words).</p>
+
+<p><strong>What never crosses at all, encrypted or otherwise:</strong> your name, pronouns, gender,
+orientation, relationship structure, session counts, and every written private note.</p>
+
+<p>The messages are carried by a public relay (<code>broker.emqx.io</code>) that only ever sees
+scrambled bytes it cannot read, and keeps none of them once you disconnect. We do not operate that
+relay, we receive nothing from it, and it stores nothing after a session ends.</p>
+
+<h2>The safety word</h2>
+<p>Once your two phones have agreed on their key, each shows the same six-character safety word. If
+it reads the same on both phones, no one is in the middle of your connection. Checking it is
+optional and takes a second.</p>
+
+<h2>What we cannot hide, honestly</h2>
+<p>Encryption hides the contents of your messages, not the fact that messages exist. Someone watching
+the public relay could see that two anonymous parties are exchanging encrypted messages: when they
+connect and disconnect, roughly how often, and roughly how large the messages are. None of that is
+tied to a name, a device, or any other session, and none of it reveals a single thing you chose or
+wrote. We would rather say this plainly than claim more than we can deliver.</p>
+
+<h2>In-app purchases</h2>
+<p>Slow Burn is free and nothing in it is ever locked. There is an optional tip jar if you would like
+to support the program; tips are handled entirely by Apple, and we receive no payment or customer
+information from them.</p>
+
+<h2>Not medical advice</h2>
+<p>Slow Burn is a wellness and education program. It is not medical advice, diagnosis, or treatment,
+and it is not a substitute for care from a qualified clinician. If pain during intimacy, a medical
+condition, a recent surgery, or a trauma history is involved, please work with a licensed clinician —
+a sex therapist or a pelvic-floor physical therapist — before or alongside this program. The app
+links to independent directories to help you find one; we are not affiliated with them.</p>
+
+<h2>Age</h2>
+<p>Slow Burn is intended for adults. Because it collects no personal information from anyone, it
+collects none from children.</p>
+
+<h2>Changes</h2>
+<p>If this policy ever changes, the updated version will be posted on this page with a new date.</p>
+
+<h2>Contact</h2>
+<p><a href="mailto:jonathanbbiles@gmail.com">jonathanbbiles@gmail.com</a><br/>
+<a href="https://www.jessicaleighbiles.com">jessicaleighbiles.com</a> ·
+<a href="https://jonathanscribbles.com">jonathanscribbles.com</a></p>
+</body>
+</html>
