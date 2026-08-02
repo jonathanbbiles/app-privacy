@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Bull or Bust — Privacy &amp; Support</title>
 <style>
-body{max-width:680px;margin:40px auto;padding:0 20px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+body{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 40px);
+  font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   color:#E6EDF3;background:#0B0E14;line-height:1.6}
-h1{font-size:26px} h2{font-size:18px;margin-top:28px} a{color:#F0B90B}
+h1{font-size:26px;margin-bottom:4px} h2{font-size:18px;margin-top:28px} a{color:#F0B90B}
 .muted{color:#8B98A9;font-size:14px}
 </style>
 </head>
@@ -15,21 +16,39 @@ h1{font-size:26px} h2{font-size:18px;margin-top:28px} a{color:#F0B90B}
 <h1>Bull or Bust — Privacy Policy</h1>
 <p class="muted">Last updated: July 2026</p>
 
-<p><strong>Bull or Bust collects no data. Full stop.</strong> The app is an educational trading
-simulator that runs entirely on your device.</p>
+<p><strong>Bull or Bust collects nothing about you.</strong> There are no accounts, no sign-in, no
+analytics, no advertising SDKs, and no tracking of any kind. The app never sends any information to
+its developer.</p>
 
-<h2>What we collect</h2>
-<p>Nothing. There are no accounts, no sign-in, and no network calls to us. The app has no analytics,
-no advertising SDKs, and no tracking of any kind. Your simulated trades, scores, and settings are
-stored only on your device (in on-device storage) and never leave it.</p>
+<h2>Learn mode</h2>
+<p>Learn mode is entirely on-device. Markets are randomly generated on your iPhone — there are no
+real prices, no brokerage, and no real money. Your simulated trades, scores, and settings are stored
+only on your device and never leave it.</p>
+
+<h2>Live mode (Bull or Bust Pro)</h2>
+<p>Live mode connects to <strong>your own free Alpaca paper-trading account</strong>, using API keys
+that you create at Alpaca and enter yourself. When Live mode is in use:</p>
+<ul>
+  <li>The app talks directly to Alpaca (<code>paper-api.alpaca.markets</code> and
+      <code>data.alpaca.markets</code>) to read market data and to place, list, and cancel
+      <em>paper</em> orders. The real-money trading host is never contacted.</li>
+  <li>Your Alpaca API key and secret are sent only to Alpaca, only in request headers — never in a
+      URL, never logged, and never to us or to any third party.</li>
+  <li>Your keys are stored on your device in the iOS Keychain. "Disconnect &amp; remove keys" in the
+      Account tab erases them.</li>
+  <li>What you do in Live mode is governed by
+      <a href="https://alpaca.markets/">Alpaca's</a> own terms and privacy policy.</li>
+</ul>
+<p>Live mode places paper trades only. No real money is ever at risk, and the developer of Bull or
+Bust never sees your account, your keys, or your trades.</p>
 
 <h2>Third parties</h2>
-<p>None. The app does not send information to any third party. In-app purchases, if offered, are
-handled by Apple under Apple’s own privacy terms; we never see your payment details.</p>
+<p>Other than Alpaca — contacted only in Live mode, and only with credentials you supply — the app
+sends information to no one. In-app purchases are handled by Apple under Apple's own privacy terms;
+we never see your payment details.</p>
 
 <h2>Children</h2>
-<p>The app is rated 4+ and safe for all ages. Because it collects no data, it collects no data from
-children either.</p>
+<p>The app is rated 4+. Because it collects no data, it collects no data from children either.</p>
 
 <h2>Changes</h2>
 <p>If this policy ever changes, the updated version will be posted here.</p>
@@ -37,8 +56,7 @@ children either.</p>
 <h2>Support &amp; Contact</h2>
 <p>Questions or feedback? Email <a href="mailto:jonathanbbiles@gmail.com">jonathanbbiles@gmail.com</a>.</p>
 
-<p class="muted">Bull or Bust is an educational simulator. Markets are randomly generated on your
-device — there are no real prices, no brokerage or exchange, and no real money. Nothing in the app is
-financial advice.</p>
+<p class="muted">Bull or Bust is an educational app. Learn mode is a simulator; Live mode is paper
+trading with real prices and no real money. Nothing in the app is financial advice.</p>
 </body>
 </html>
