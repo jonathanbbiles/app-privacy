@@ -85,6 +85,13 @@ connect and disconnect, roughly how often, and roughly how large the messages ar
 tied to a name, a device, or any other session, and none of it reveals a single thing you chose or
 wrote. We would rather say this plainly than claim more than we can deliver.</p>
 
+<p>Two more things the app fetches, for the same reason of saying it plainly. Its typefaces come
+from Google Fonts, and two small pieces of its code — the client that talks to the pairing relay,
+and the one that draws the pairing QR code — are loaded from public code CDNs (jsDelivr and
+Cloudflare's cdnjs). Those three services receive the request and your device's IP address when it
+happens. They receive nothing else: no message, no journal entry, no pairing content, nothing you
+chose or wrote. It happens whether or not you ever pair.</p>
+
 <h2>Buying Slow Burn</h2>
 <p>Slow Burn is a <strong>paid app</strong>: you pay once on the App Store and everything in it is
 yours. There are <strong>no in-app purchases, no subscriptions and no locked or premium content</strong>
