@@ -7,12 +7,14 @@ body{max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem 4rem;background:#13111
   font:16px/1.65 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
 h1{font-size:1.7rem;letter-spacing:-.4px}h2{font-size:1.05rem;margin-top:2rem;color:#D9A05B}
 a{color:#D9A05B}.d{color:#8E8377;font-size:.9rem}
+ul{padding-left:1.2rem}li{margin:.45rem 0}
 </style></head><body>
 <h1>ShaveMe — Privacy Policy</h1>
-<p class="d">Last updated 15 August 2026</p>
+<p class="d">Last updated 22 August 2026</p>
 
-<p><strong>ShaveMe collects nothing.</strong> There is no account, no sign-in, no analytics,
-and no server. The app makes no network requests of its own.</p>
+<p><strong>ShaveMe collects nothing about you.</strong> There is no account, no sign-in, no
+advertising, and no analytics. The developer operates no server and receives no data from the
+app. Your photos and your face data stay on your device.</p>
 
 <h2>Your photos</h2>
 <p>The three reference photos you take are stored in ShaveMe's own database on your device.
@@ -23,13 +25,64 @@ Removing a photo in the app deletes it from the device. Deleting ShaveMe deletes
 <p>ShaveMe asks for camera access only when you tap "Take photo", and for photo-library access
 only if you choose an existing image instead. It uses that access for nothing else.</p>
 
-<h2>Finding your face</h2>
-<p>To draw a style's cut lines onto your own face, ShaveMe locates facial landmarks in your
-photo. <strong>That happens entirely inside the app, on your device.</strong> The face model is
-bundled in the app itself and read from local storage — it is not downloaded, and your photo is
-not sent anywhere to be analysed. There is no cloud vision service involved at any point.</p>
-<p>The landmark positions are stored on the device alongside the photo, so a style opens
-instantly instead of re-analysing. Deleting the photo deletes them too.</p>
+<h2 id="face-data">Face Data</h2>
+
+<p><strong>ShaveMe processes face data entirely on your device. Face data is never transmitted
+off the device, never shared with anyone, never sold, and never used to identify you.</strong></p>
+
+<p><strong>What is detected.</strong> When you take or choose a photo, or open the live camera
+view, ShaveMe measures <em>face landmark geometry</em> from that image: a set of coordinate points
+marking where facial features sit within the picture — jawline, chin, mouth, nose, eyes, brows and
+hairline. It is purely a set of positions describing the shape of the face in that one image.
+ShaveMe does not create a faceprint, face template or biometric signature, does not perform face
+recognition or face matching, and cannot determine who you are from this data.</p>
+
+<p><strong>How it is used.</strong> For one purpose only: to align the selected shave or beard
+style's cut lines to your face, so the overlay sits correctly on your jaw and chin instead of
+floating over the picture. Face data is used for nothing else. It is not used for identification
+or authentication, not for advertising, not for analytics or measurement, not to train or improve
+any model, and not for any purpose beyond drawing that overlay.</p>
+
+<p><strong>Where it is processed.</strong> Entirely on your device, inside the app. The face
+detection model (MediaPipe Face Landmarker, an open-source library) is bundled inside the app and
+loaded from local storage — it is not downloaded at runtime. Your photos and camera frames are
+analysed by that model on the device itself. No photo, no camera frame and no landmark coordinate
+is ever uploaded. No cloud service, remote server or server-side vision API is involved at any
+point, and none exists to receive it.</p>
+
+<p><strong>Storage and retention.</strong></p>
+<ul>
+<li><em>Live camera view:</em> landmarks are held in memory only for the single frame being drawn
+and are discarded immediately when the next frame replaces them. Nothing from the live view is
+written to disk — no video is recorded, and no frame is saved.</li>
+<li><em>Saved reference photos:</em> if you save one of your reference photos, ShaveMe also saves
+that photo's landmark coordinates on your device, in the app's own private on-device storage,
+next to the photo, so that a style opens instantly instead of re-running detection every time.
+These coordinates are retained only for as long as you keep that photo, and they never leave your
+device.</li>
+</ul>
+
+<p><strong>Deletion.</strong> You control it entirely. Removing a photo in ShaveMe immediately
+deletes that photo and its landmark coordinates from your device. Deleting the app removes all of
+them. Because face data is never uploaded, no copy exists anywhere else — there is no server-side
+record, backup or archive of it, with us or with anyone else.</p>
+
+<p><strong>Sharing and third parties.</strong> None. Face data is never shared with the developer,
+with Apple, with Google, with any advertiser, analytics provider, data broker or any other third
+party. It never leaves your device, so there is no recipient and no third party with access to it.
+ShaveMe does not sell face data, does not share it for advertising, and does not use it for
+tracking across apps or websites. No third party receives face data in any form.</p>
+
+<h2>Diagnostics from the face-detection library</h2>
+<p>For completeness, and so nothing here overstates the case: the bundled face-detection library
+(Google's MediaPipe Tasks Vision, which runs locally) sends one small diagnostic ping to Google
+when the face engine starts, and periodically while it is loaded. It is a few dozen bytes and
+contains only the library's own version number, which task was run ("face landmarker"), and how
+long the engine took.</p>
+<p><strong>It contains no photo, no camera frame, no landmark coordinates, no face data of any
+kind, no device identifier, no account and nothing about you or your use of the app.</strong>
+This ping is built into the third-party library rather than added by ShaveMe, and it carries none
+of your data — but it is a network request, so it is disclosed rather than glossed over.</p>
 
 <h2>Purchases</h2>
 <p>ShaveMe Pro is a one-off in-app purchase handled entirely by Apple through the App Store.
@@ -52,7 +105,7 @@ ShaveMe as the referrer, so if you buy something Amazon pays a small commission 
 cost to you. The tag identifies the app, not you.</p>
 <p><strong>As an Amazon Associate, ShaveMe earns from qualifying purchases.</strong></p>
 <p>ShaveMe does not sell, stock or ship anything, and receives no information from Amazon about
-what you did or did not buy.
+what you did or did not buy.</p>
 
 <h2>Children</h2>
 <p>ShaveMe is rated 4+ and collects no data from anyone, including children.</p>
