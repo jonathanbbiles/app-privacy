@@ -15,7 +15,7 @@ ul{padding-left:20px} li{margin:4px 0}
 </head>
 <body>
 <h1>Slow Burn — Privacy Policy &amp; Support</h1>
-<p class="muted">Last updated: 2 August 2026</p>
+<p class="muted">Last updated: 6 October 2026</p>
 
 <p>Slow Burn is a guided intimacy program built on Sensate Focus — six unhurried stages you move
 through on your own, or with a partner. It is a wellness and education tool, not medical advice.</p>
@@ -37,6 +37,8 @@ to us, not to anyone:</p>
 <li>Your gender, orientation, relationship structure and body-area wording preferences</li>
 <li>How many sessions you have logged, and at which stage</li>
 <li><strong>The free-text private note you write after each session</strong></li>
+<li>On the Together tab (from version 1.1): the conversation cards you saved, which cards you have
+already seen, the things you passed on in “Try something new”, and the steps you ticked off</li>
 </ul>
 <p>Deleting the app deletes all of it.</p>
 
@@ -44,7 +46,8 @@ to us, not to anyone:</p>
 <p>The only feature that uses the network at all is live pairing, where two people run the program
 together on their own phones. It exists so the two phones can do two things: open the next stage
 only when <em>both</em> people have privately confirmed they are ready, and show each of you the
-reflections you <em>both</em> named.</p>
+reflections you <em>both</em> named — and, from version 1.1, the new things you <em>both</em> said
+you would try.</p>
 
 <p>That link is <strong>end-to-end encrypted</strong>. When you pair, the two phones perform an
 ephemeral ECDH P-256 key exchange, publishing only their public keys. Each phone derives the shared
@@ -53,8 +56,9 @@ combined with your pair code, produces an AES-256-GCM key that only your two pho
 code itself never travels. Everything sent afterwards is ciphertext.</p>
 
 <p><strong>What crosses between the two phones, encrypted:</strong> a number from 0 to 6 for the
-stage you have confirmed you are ready for, and the positions of the reflection chips you tapped
-(sent as list positions, never as words).</p>
+stage you have confirmed you are ready for, the positions of the reflection chips you tapped, and
+(from version 1.1) the positions of the things you said <em>yes</em> to on the Together tab — all
+sent as list positions, never as words. The things you passed on are never sent.</p>
 
 <p><strong>What never crosses at all, encrypted or otherwise:</strong> your name, pronouns, gender,
 orientation, relationship structure, session counts, and every written private note.</p>
