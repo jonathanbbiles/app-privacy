@@ -1,0 +1,3424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Free Chord Progression Generator — ChordLoop</title>
+<meta name="description" content="Pick a key, tap chords, and loop a progression at any tempo — free in your browser, no sign-up. Hear it on piano, guitar or Rhodes, then take it to your DAW as MIDI with the ChordLoop iPhone app." />
+<meta name="apple-itunes-app" content="app-id=6787716007, app-argument=https://jonathanscribbles.com/chords/" />
+<style>
+  /* ============================================================================
+     ChordLoop 1.1.0 — the bright rebuild.
+
+     The owner's verdict on the dark build was "hard to navigate, dark and broody".
+     Two things changed, and only these two: the PALETTE and the NAVIGATION. Not one
+     line of the audio engine, the entitlement logic or the export path moved.
+
+     PALETTE. Sunny cream ground, white "sticker" cards with a chunky bottom edge,
+     rounded 18–22px corners, and three accents that each mean one thing:
+        sun    (#FFC43D) — play, and the thing you are building
+        teal   (#0B7A6E) — "this is selected / this is on"
+        coral  (#C93B2B) — stop, remove, PRO
+     Every text/background pair below clears WCAG AA (4.5:1 body, 3:1 large). The
+     accents are used as FILLS with white or near-black on top, never as thin text
+     on cream, which is where warm palettes usually fail contrast.
+
+     NAVIGATION. Three tabs instead of one nine-card scroll: Build (key → chords →
+     your loop), Sound (instrument, feel, drums), Ideas (saved). The transport stays
+     pinned so Play is always one tap away, and the advanced controls — export, MIDI,
+     share, clear, diagnostics — live behind labelled <details> expanders.
+
+     Aimed at a 12-year-old and a 40-year-old hobbyist: friendly, not childish. No
+     mascots, no baby talk, plain words on big targets. Every tappable thing is still
+     a real <button> at 44pt+, because Apple reviews on a device and a div with a
+     click handler is the recurring Guideline 2.1(a) failure across this portfolio. */
+  /* THEMES. Every colour in the app resolves through these tokens, so a theme is just a
+     different set of values on <html data-theme>. Settings → Appearance writes that
+     attribute and remembers it; nothing else in the app has to know a theme exists. */
+  :root{
+    --cream:#FFF8EE; --cream2:#FDEFDC; --card:#FFFFFF;
+    --line:#F0E1C8; --line2:#E6D4B7;
+    --ink:#2B2440; --muted:#6B6280; --ink-soft:#4A4160;
+    --sun:#FFC43D; --sun-light:#FFDC8A; --sun-deep:#F2A81C;
+    --teal:#0B7A6E; --teal-light:#D9F2EE; --teal-mid:#12A493;
+    --coral:#C93B2B; --coral-light:#FFE3DD; --coral-bright:#FF7A63;
+    --sky:#2F7FD4;
+    --ink-on-sun:#3A2A00;
+    --glow-a:rgba(255,196,61,.30); --glow-b:rgba(18,164,147,.16);
+    --bar:rgba(255,248,238,.94);
+    --stop-edge:#F3BDB2;
+    --radius:20px;
+    --shadow:0 2px 0 var(--line2), 0 10px 24px rgba(90,64,20,.07);
+  }
+  :root[data-theme="paper"]{
+    --cream:#F7F4EF; --cream2:#FCFAF7; --card:#FFFFFF;
+    --line:#E3DCD1; --line2:#D8CEC1;
+    --ink:#191714; --muted:#6B645B; --ink-soft:#3A352E;
+    --glow-a:rgba(140,106,69,.10); --glow-b:rgba(120,120,120,.06);
+    --bar:rgba(247,244,239,.94);
+    --stop-edge:#E0CFC9;
+    --shadow:0 2px 0 var(--line2), 0 10px 24px rgba(40,32,20,.06);
+  }
+  :root[data-theme="slate"]{
+    --cream:#15171C; --cream2:#1B1E25; --card:#20242C;
+    --line:#2B3039; --line2:#333945;
+    --ink:#ECEFF4; --muted:#9AA3B2; --ink-soft:#C7CEDA;
+    --teal-light:#10352F; --coral-light:#3A201B;
+    --ink-on-sun:#2A1F00;
+    --glow-a:rgba(255,196,61,.14); --glow-b:rgba(18,164,147,.12);
+    --bar:rgba(21,23,28,.94);
+    --stop-edge:#4A2A24;
+    --shadow:0 2px 0 var(--line2), 0 10px 24px rgba(0,0,0,.35);
+  }
+  :root[data-theme="mint"]{
+    --cream:#F2F7F4; --cream2:#E8F1EC; --card:#FFFFFF;
+    --line:#D6E6DC; --line2:#C3DACD;
+    --ink:#17271F; --muted:#5C7167; --ink-soft:#33473C;
+    --glow-a:rgba(18,164,147,.20); --glow-b:rgba(47,127,212,.10);
+    --bar:rgba(242,247,244,.94);
+    --shadow:0 2px 0 var(--line2), 0 10px 24px rgba(20,60,45,.07);
+  }
+  /* ACCENT: the one colour that carries the primary action. Independent of the theme, so
+     any accent works on any background. */
+  :root[data-accent="teal"]{ --sun:#12A493; --sun-light:#7FD6CB; --sun-deep:#0B7A6E; --ink-on-sun:#00231F; }
+  :root[data-accent="coral"]{ --sun:#FF7A63; --sun-light:#FFB6A8; --sun-deep:#C93B2B; --ink-on-sun:#3B0F07; }
+  :root[data-accent="sky"]{ --sun:#4F97E0; --sun-light:#A8CCF2; --sun-deep:#2F7FD4; --ink-on-sun:#04203F; }
+  :root[data-accent="violet"]{ --sun:#8B6FD6; --sun-light:#C2B1EE; --sun-deep:#6647B8; --ink-on-sun:#1B0E3C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  [hidden]{display:none !important;}
+  html,body{margin:0; height:100%;}
+  /* iOS rubber-band: the gradient lives on <body>, so overscrolling past it exposed the
+     WebView backdrop as a black bar at the top and bottom. Paint <html> the same cream and
+     stop the chain from bouncing at all. */
+  html{background:var(--cream); overscroll-behavior-y:none;}
+  html,body{transition:background-color .18s ease;}
+  body{overscroll-behavior-y:none;}
+  body{
+    font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(700px 320px at 8% -4%, var(--glow-a) 0%, transparent 65%),
+      radial-gradient(620px 320px at 96% 6%, var(--glow-b) 0%, transparent 62%),
+      var(--cream);
+    background-attachment:fixed;
+    color:var(--ink);
+    padding:max(14px,env(safe-area-inset-top)) 15px calc(24px + env(safe-area-inset-bottom));
+    max-width:560px; margin:0 auto; min-height:100%;
+    touch-action:manipulation;
+    font-size:16px; line-height:1.45;
+  }
+  /* Clear the pinned transport so the last control on the page is never trapped under it.
+     `height:auto` is load-bearing: the base rule sets html,body{height:100%}, which CAPS
+     the body box, so when the content overflows it spills straight past the bottom padding
+     and the footer links end up unreachable. Caught by the elementFromPoint hit-test in
+     tools/layout-check.mjs, not by eye. */
+  body{height:auto; padding-bottom:calc(118px + env(safe-area-inset-bottom));}
+
+  /* ---------------- header + tabs ---------------- */
+  header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .brand{display:flex; align-items:center; gap:11px;}
+  .logo{width:42px; height:42px; border-radius:14px; flex:none;
+    background:linear-gradient(150deg,var(--sun-light),var(--sun) 48%,var(--sun-deep));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 0 #E09A12, 0 6px 16px rgba(242,168,28,.35);}
+  .brand h1{font-size:24px; margin:0; font-weight:800; letter-spacing:-.4px; color:var(--ink);}
+  .brand .sub{font-size:10.5px; color:var(--teal); letter-spacing:2px; text-transform:uppercase;
+    font-weight:800; margin-top:-1px;}
+  .tag{font-size:11px; color:var(--muted); letter-spacing:.3px; font-weight:700; text-align:right; max-width:96px; line-height:1.4;}
+
+  /* Three areas, one row. A segmented top nav rather than a second pinned bar: the
+     transport already owns the bottom of the screen, and stacking two fixed bars on an
+     iPhone SE eats a third of the viewport. */
+  .tabs{display:flex; gap:5px; background:var(--cream2); border:2px solid var(--line);
+    border-radius:18px; padding:5px; margin-bottom:14px; box-shadow:inset 0 1px 2px rgba(120,90,40,.06);}
+  .tabs .tab{flex:1; min-height:48px; border:0; background:transparent; color:var(--ink-soft);
+    font:inherit; font-size:14.5px; font-weight:800; border-radius:13px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px; padding:6px 4px;
+    transition:transform .12s ease, background .15s ease;}
+  .tabs .tab .tico{font-size:16px; line-height:1;}
+  .tabs .tab.on{background:var(--card); color:var(--ink);
+    box-shadow:0 2px 0 var(--line2), 0 4px 10px rgba(90,64,20,.10);}
+  .tabs .tab:active{transform:scale(.96);}
+
+  /* ---------------- cards + shared controls ---------------- */
+  .card{background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+    padding:15px; margin-bottom:12px; box-shadow:var(--shadow);}
+  .row{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .label{font-size:15px; color:var(--ink); margin-bottom:10px; font-weight:800; letter-spacing:-.2px;
+    display:flex; align-items:center; gap:8px;}
+  .label .sm{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:0;}
+  .sublabel2{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.2px;
+    font-weight:800; margin-bottom:8px;}
+  select,button{font-family:inherit; color:var(--ink);}
+  select{background:var(--cream2); border:2px solid var(--line2); border-radius:14px;
+    padding:12px 14px; font-size:17px; font-weight:800; -webkit-appearance:none; appearance:none;
+    min-width:92px; min-height:48px; color:var(--ink);}
+  .seg{display:inline-flex; background:var(--cream2); border:2px solid var(--line); border-radius:15px;
+    overflow:hidden; padding:4px; gap:4px;}
+  .seg button{background:transparent; border:0; padding:8px 14px; font-size:14.5px; color:var(--ink-soft);
+    border-radius:11px; font-weight:800; min-height:44px;}
+  .seg button.on{background:var(--teal); color:#fff; box-shadow:0 2px 0 #075A51;}
+  .insts{display:flex; gap:8px; flex-wrap:wrap;}
+  /* The picker got long enough (13 voices) that one undifferentiated wall of buttons was
+     the wrong shape: grouped rows let you find "a guitar" without reading every label. */
+  #insts{display:block;}
+  #insts .instgroup{margin-top:14px;}
+  #insts .instgroup:first-child{margin-top:0;}
+  #insts .sublabel{font-size:10.5px; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase;
+    margin-bottom:8px; font-weight:800;}
+  .insts button{background:var(--cream2); border:2px solid var(--line); color:var(--ink-soft);
+    border-radius:14px; padding:11px 14px; font-size:14.5px; font-weight:700; cursor:pointer;
+    transition:transform .08s ease; min-height:48px;}
+  .insts button:active{transform:scale(.95);}
+  .insts button.on{background:var(--teal); color:#fff; border-color:var(--teal);
+    box-shadow:0 2px 0 #075A51;}
+
+  /* ---------------- the chord palette ---------------- */
+  .chords{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  @media(max-width:400px){ .chords{grid-template-columns:repeat(3,1fr);} }
+  /* Chord buttons are real <button>s. Reset the UA styling they bring with them. */
+  .chip{position:relative; background:var(--card); border:2px solid var(--line2);
+    border-radius:16px; padding:11px 4px 9px; text-align:center; cursor:pointer; user-select:none;
+    font:inherit; color:inherit; -webkit-appearance:none; appearance:none; width:100%; display:block;
+    box-shadow:0 2px 0 var(--line2);
+    transition:transform .09s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;}
+  .chip:active{transform:translateY(2px); box-shadow:0 0 0 var(--line2);}
+  /* The "pop": tapping a chord plays it, and the button springs. It is the main piece of
+     feedback in the app and it should feel like pressing a key, not clicking a link. */
+  .chip.lit{background:linear-gradient(180deg,var(--sun-light),var(--sun));
+    border-color:var(--sun-deep); box-shadow:0 2px 0 var(--sun-deep), 0 6px 18px rgba(242,168,28,.4);
+    animation:pop .28s cubic-bezier(.34,1.56,.64,1);}
+  .chip .nm{display:block; font-size:19px; font-weight:800; letter-spacing:-.3px; white-space:nowrap; color:var(--ink);}
+  .chip .rn{display:block; font-size:11.5px; color:var(--teal); margin-top:2px; font-weight:800;}
+  .chip.lit .nm, .chip.lit .rn{color:var(--ink-on-sun);}
+  @keyframes pop{ 0%{transform:scale(1);} 40%{transform:scale(1.14);} 100%{transform:scale(1);} }
+
+  /* ---------------- the progression ---------------- */
+  .prog{display:flex; gap:9px; flex-wrap:wrap; min-height:56px; align-items:center;}
+  /* A step is a TILE, not a pill: the chord and its step number on top, and under it the
+     one control that belongs to that chord — how it plays. The tile itself is a plain div
+     holding real <button>s; it is only the layout box and the drag target. */
+  .pchip{background:linear-gradient(180deg,var(--sun-light),var(--sun)); color:var(--ink-on-sun);
+    border-radius:16px; padding:5px 6px 6px; box-shadow:0 2px 0 var(--sun-deep), 0 5px 14px rgba(242,168,28,.28);
+    display:flex; flex-direction:column; gap:5px; min-width:112px;
+    touch-action:none; user-select:none;}
+  .pchip .prow{display:flex; align-items:center; gap:2px;}
+  .pchip .pnm{flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:none; border:0; color:inherit; font:inherit; font-weight:800; font-size:17px;
+    min-height:44px; padding:0 2px; cursor:grab; touch-action:none;
+    -webkit-appearance:none; appearance:none;}
+  .pchip .pnum{display:inline-flex; align-items:center; justify-content:center; width:19px; height:19px;
+    border-radius:50%; background:rgba(58,42,0,.82); color:var(--sun-light);
+    font-size:10.5px; font-weight:800; flex:none;}
+  /* 44×44, like every other control in the app. */
+  .pchip .x{background:none; border:0; color:inherit; font:inherit; font-weight:800; opacity:.6;
+    min-width:44px; min-height:44px; padding:0; cursor:pointer; flex:none;
+    -webkit-appearance:none; appearance:none;}
+  .pchip.playing{background:linear-gradient(180deg,#FF9C86,var(--coral-bright));
+    box-shadow:0 2px 0 var(--coral), 0 6px 20px rgba(255,122,99,.5);
+    animation:wobble .5s ease-in-out;}
+  .pchip.playing .pnum{background:rgba(80,20,10,.85); color:#FFE3DD;}
+  @keyframes wobble{ 0%{transform:scale(1) rotate(0);} 30%{transform:scale(1.07) rotate(-2deg);}
+    60%{transform:scale(1.03) rotate(1.5deg);} 100%{transform:scale(1) rotate(0);} }
+  .pchip.dragging{opacity:.95; box-shadow:0 14px 30px rgba(90,64,20,.35);}
+  .pchip.dragging .pnm{cursor:grabbing;}
+  /* The per-chord play style. A light inset on the sunny tile, so it reads as a control
+     rather than as part of the chord name — and so the PRO badge on it is legible when a
+     free user sees it. It always shows the style the step will ACTUALLY play; the brighter
+     `custom` treatment means the step was given its own style instead of following the loop. */
+  .pstyle{display:flex; align-items:center; justify-content:center; gap:5px; width:100%;
+    background:rgba(255,255,255,.72); border:2px solid rgba(58,42,0,.14); border-radius:12px;
+    color:#5C4718; font:inherit; font-size:12.5px; font-weight:800;
+    min-height:44px; padding:0 6px; cursor:pointer; white-space:nowrap;}
+  .pstyle .glyph{font-size:13px; letter-spacing:-.5px;}
+  .pstyle.custom{background:#fff; border-color:var(--teal); color:var(--teal);
+    box-shadow:0 2px 0 rgba(11,122,110,.35);}
+  .pstyle .protag{margin-left:3px;}
+  .empty{color:var(--muted); font-size:14.5px; font-weight:600;}
+
+  /* ---------------- buttons ---------------- */
+  .controls{display:flex; gap:9px; margin-top:12px; flex-wrap:wrap;}
+  .controls + .controls{margin-top:8px;}
+  /* 44pt is Apple's minimum tap target; enforced on every control class rather than
+     trusted to padding arithmetic. */
+  .btn{border:2px solid var(--line2); background:var(--card); color:var(--ink); border-radius:15px;
+    padding:12px 16px; font-size:15px; font-weight:800; cursor:pointer; min-height:48px;
+    box-shadow:0 2px 0 var(--line2); transition:transform .08s ease, box-shadow .08s ease;}
+  .btn:active{transform:translateY(2px); box-shadow:0 0 0 var(--line2);}
+  .btn.play{background:linear-gradient(180deg,var(--sun-light),var(--sun)); color:var(--ink-on-sun);
+    border-color:var(--sun-deep); box-shadow:0 3px 0 var(--sun-deep); font-size:17px;
+    flex:1; min-width:130px;}
+  .btn.play:active{transform:translateY(3px); box-shadow:0 0 0 var(--sun-deep);}
+  .btn.stop{background:var(--card); color:var(--coral); border-color:var(--stop-edge); box-shadow:0 2px 0 var(--stop-edge);}
+  .btn.stop:active{box-shadow:0 0 0 var(--stop-edge);}
+  .btn.ghost{background:var(--cream2); color:var(--ink-soft); border-color:var(--line);}
+  /* The one primary action in the Build tab. */
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff; box-shadow:0 3px 0 #075A51;
+    flex:1; min-width:150px; font-size:16px;}
+  .btn.primary:active{transform:translateY(3px); box-shadow:0 0 0 #075A51;}
+  .btn.wide{width:100%;}
+  .setrow{display:flex; gap:20px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:2px solid var(--line);}
+  .tempo{display:flex; align-items:center; gap:12px; margin-top:15px;}
+  input[type=range]{flex:1; accent-color:var(--sun-deep); height:5px;}
+  .tempo .bpm{font-variant-numeric:tabular-nums; font-weight:800; min-width:78px; text-align:right; color:var(--ink);}
+  .presets{display:flex; gap:8px; flex-wrap:wrap;}
+  .presets .btn{padding:10px 13px; font-size:13.5px; font-weight:700; min-height:46px;
+    background:var(--teal-light); border-color:#BFE6DF; box-shadow:0 2px 0 #BFE6DF; color:#0A5A51;}
+  .presets .btn:active{box-shadow:0 0 0 #BFE6DF;}
+  .hint{font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.5; font-weight:600;}
+  .hint b{color:var(--teal); font-weight:800;}
+
+  /* ---------------- "More" expanders (progressive disclosure) ---------------- */
+  details.more{margin-top:12px; border-top:2px solid var(--line); padding-top:4px;}
+  details.more summary{list-style:none; cursor:pointer; padding:13px 2px; font-size:14px;
+    font-weight:800; color:var(--teal); min-height:44px; display:flex; align-items:center; gap:7px;}
+  details.more summary::-webkit-details-marker{display:none;}
+  details.more summary:before{content:"＋"; font-size:15px; font-weight:800;}
+  details.more[open] summary:before{content:"−";}
+  /* Chrome lays out a closed <details>'s contents and merely skips painting them
+     (content-visibility on ::details-content), so the buttons inside keep a real
+     bounding box under whatever IS painted there — which reads as an unreachable
+     control to the elementFromPoint hit-test in tools/layout-check.mjs, and would read
+     the same way to a screen reader walking the box tree. Collapse them properly. */
+  details.more:not([open]) > *:not(summary){display:none;}
+  details.diag:not([open]) > *:not(summary){display:none;}
+  details.diag{background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+    padding:0 16px; margin-bottom:14px; box-shadow:var(--shadow);}
+  details.diag summary{list-style:none; cursor:pointer; padding:15px 0; font-size:14px; font-weight:800;
+    color:var(--ink-soft); min-height:44px; display:flex; align-items:center; gap:7px;}
+  details.diag summary::-webkit-details-marker{display:none;}
+  details.diag summary:before{content:"▸"; color:var(--teal); font-weight:800;}
+  details.diag[open] summary:before{content:"▾";}
+  .diagbody{padding-bottom:16px;}
+  .diagbody .btn{margin-top:10px;}
+
+  /* ---------------- saved ideas ---------------- */
+  .saved{display:block;}
+  .savedrow{display:flex; align-items:center; gap:8px; padding:9px 0; border-top:2px solid var(--line);}
+  .savedrow:first-child{border-top:0;}
+  .savedrow .nm{flex:1; min-width:0; font-size:15px; font-weight:800; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; background:none; border:0; color:var(--ink);
+    text-align:left; padding:6px 0; min-height:48px; cursor:pointer;}
+  .savedrow .meta{font-size:11.5px; color:var(--muted); font-weight:600;}
+  .savedrow .mini{background:var(--cream2); border:2px solid var(--line2); color:var(--teal);
+    border-radius:13px; padding:9px 11px; font-size:15px; font-weight:800; flex:none;
+    min-width:48px; min-height:48px; box-shadow:0 2px 0 var(--line2); cursor:pointer;}
+  .savedrow .mini:active{box-shadow:0 0 0 var(--line2); transform:translateY(2px);}
+  .savedrow .mini.del{color:var(--coral);}
+
+  /* ---------------- footer ---------------- */
+  .foot{text-align:center; color:var(--muted); font-size:11.5px; margin-top:8px; letter-spacing:.2px;
+    font-weight:600; line-height:1.5;}
+  .foot.warn{color:#9A5B00;}
+  .foot.links{margin-top:8px; display:flex; gap:10px; align-items:center; justify-content:center;}
+  .foot.links a{color:var(--teal); text-decoration:none; font-weight:800; padding:6px 2px; min-height:44px;
+    display:inline-flex; align-items:center;}
+  .pw-legal{display:flex; gap:9px; align-items:center; justify-content:center; margin-top:10px; font-size:11.5px; color:var(--muted);}
+  .pw-legal a{color:var(--teal); text-decoration:none; font-weight:800; padding:6px 2px;}
+
+  /* ---------------- the pinned transport ---------------- */
+  /* Play is the control you reach for constantly, so it is never scrolled off. */
+  .transport{position:fixed; left:0; right:0; bottom:0; z-index:25;
+    padding:10px 15px calc(10px + env(safe-area-inset-bottom));
+    background:var(--bar); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-top:2px solid var(--line);}
+  .tbar{display:flex; align-items:center; gap:9px; max-width:560px; margin:0 auto;}
+  .transport .btn{padding:12px 14px;}
+  .transport .btn.play{flex:0 0 auto; min-width:118px;}
+  .transport .btn.stop{flex:0 0 auto; min-width:48px; padding:12px 12px;}
+  /* min-width:0 on BOTH the group and the range: a flex item defaults to min-width:auto,
+     and an <input type=range> reports an intrinsic width of ~129px, so without this the
+     tempo group refuses to shrink and pushes the BPM readout off a 390px screen. */
+  .transport .tempo{margin-top:0; flex:1 1 auto; gap:9px; min-width:0;}
+  /* touch-action:none is the whole fix for "the tempo slider only moves when I'm scrolled
+     to the bottom". body has touch-action:manipulation, so iOS treated a drag that started
+     on the slider as a page scroll unless the page happened to have nowhere left to go.
+     Claiming the gesture here hands the drag to the input every time. A taller hit area
+     comes with it — the bare track is ~4px and nobody can hit that reliably. */
+  .transport input[type=range]{min-width:0; touch-action:none; padding:14px 0; height:44px;}
+  .transport .bpm{flex:0 0 auto; min-width:62px; font-size:13px; color:var(--ink-soft);}
+  /* The bouncing note: the app's one piece of idle motion, and it only ever runs while
+     something is actually playing. */
+  .transport .btn.play:before{content:""; }
+  body.is-playing .transport .btn.play:before{content:"♪"; display:inline-block; margin-right:6px;
+    animation:bouncenote .62s ease-in-out infinite;}
+  @keyframes bouncenote{ 0%,100%{transform:translateY(0) rotate(-6deg);} 50%{transform:translateY(-5px) rotate(6deg);} }
+
+  /* An accent swatch wears its own colour — selecting one should confirm what you picked,
+     not paint every choice the same green. */
+  #accentPick button{border-left-width:14px;}
+  #accentPick button[data-accent="sun"]{border-left-color:#FFC43D;}
+  #accentPick button[data-accent="teal"]{border-left-color:#12A493;}
+  #accentPick button[data-accent="coral"]{border-left-color:#FF7A63;}
+  #accentPick button[data-accent="sky"]{border-left-color:#4F97E0;}
+  #accentPick button[data-accent="violet"]{border-left-color:#8B6FD6;}
+  #accentPick button.on, #themePick button.on{background:var(--sun); color:var(--ink-on-sun); border-color:var(--sun-deep);}
+
+  /* The key bar: ONE row, no card, no caption. Everything in it is deliberately tighter
+     than the same control elsewhere — three groups have to sit on a 390px phone without
+     wrapping, and a bar that wraps is not a bar. 44px tap targets are kept throughout. */
+  .keybar{display:flex; align-items:center; gap:7px; margin-bottom:14px; flex-wrap:nowrap;}
+  .keybar select{flex:0 1 auto; min-width:0; padding:9px 26px 9px 11px; font-size:15px;
+    background-position:right 8px center;}
+  .keybar .seg{flex:0 0 auto; padding:3px; gap:2px; border-radius:13px;}
+  .keybar .seg button{padding:7px 9px; font-size:13.5px; border-radius:10px;}
+  @media (max-width:339px){ .keybar{flex-wrap:wrap;} }
+  #instSel{width:100%;}
+
+  /* ---------------- toast, badges, sheets ---------------- */
+  #toast{position:fixed; left:50%; bottom:108px; transform:translateX(-50%) translateY(16px);
+    background:var(--ink); color:#FFF8EE; padding:13px 18px; border-radius:15px; font-weight:800;
+    font-size:14.5px; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    box-shadow:0 10px 28px rgba(43,36,64,.35); z-index:20; max-width:88vw; text-align:center;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .protag{font-size:9px; font-weight:800; letter-spacing:.6px; color:#fff; background:var(--coral);
+    padding:3px 6px; border-radius:7px; margin-left:7px; position:relative; top:-1px;}
+  /* Per-chord play style picker. A bottom sheet rather than a centre modal: it is reached
+     from a tile half-way down the page and it stays open while you audition, so it must
+     not cover what you just tapped. */
+  #feelSheet{position:fixed; inset:0; background:rgba(43,36,64,.5); display:none; align-items:flex-end; justify-content:center; z-index:41;}
+  #feelSheet.show{display:flex;}
+  .fs-card{background:var(--card); border:2px solid var(--line);
+    border-radius:24px 24px 0 0; padding:20px 18px calc(18px + env(safe-area-inset-bottom));
+    max-width:440px; width:100%; max-height:86vh; overflow:auto; box-shadow:0 -18px 60px rgba(43,36,64,.3);}
+  .fs-card h2{margin:0 0 2px; font-size:21px; font-weight:800; letter-spacing:-.3px;}
+  .fs-sub{font-size:12.5px; color:var(--teal); margin-bottom:14px; font-weight:800;}
+  .fs-opt{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+    background:var(--cream2); border:2px solid var(--line); color:var(--ink); font:inherit;
+    border-radius:15px; padding:9px 13px; min-height:58px; margin-bottom:8px; cursor:pointer;}
+  .fs-opt .g{width:28px; flex:none; text-align:center; font-size:18px; color:var(--teal);}
+  .fs-opt .w{flex:1; min-width:0;}
+  .fs-opt .t{display:block; font-size:15px; font-weight:800;}
+  .fs-opt .d{display:block; font-size:12px; color:var(--muted); font-weight:600; margin-top:2px; white-space:normal;}
+  .fs-opt.on{border-color:var(--teal); background:var(--teal-light);}
+  .fs-opt .tick{margin-left:auto; color:var(--teal); font-weight:800; opacity:0; flex:none;}
+  .fs-opt.on .tick{opacity:1;}
+  .fs-note{font-size:12.5px; color:var(--muted); line-height:1.5; margin:2px 0 12px; font-weight:600;}
+
+  /* ---------------- paywall ---------------- */
+  #paywall{position:fixed; inset:0; background:rgba(43,36,64,.55); display:none; align-items:center; justify-content:center; z-index:40; padding:20px;}
+  #paywall.show{display:flex;}
+  .pw-card{background:var(--card); border:2px solid var(--line); border-radius:24px; padding:24px 22px;
+    max-width:380px; width:100%; box-shadow:0 24px 70px rgba(43,36,64,.35); max-height:90vh; overflow:auto;}
+  .pw-card h2{margin:0 0 2px; font-size:25px; font-weight:800; letter-spacing:-.4px;}
+  .pw-price{color:var(--teal); font-weight:800; font-size:15px; margin-bottom:16px;}
+  .pw-list{list-style:none; padding:0; margin:0 0 20px;}
+  .pw-list li{padding:11px 0; border-top:2px solid var(--line); color:var(--ink-soft); font-size:14.5px;
+    display:flex; gap:11px; align-items:flex-start; line-height:1.45; font-weight:600;}
+  .pw-list li:before{content:"♪"; color:var(--sun-deep); font-weight:800; font-size:17px;}
+  .pw-buy{width:100%; background:linear-gradient(180deg,var(--sun-light),var(--sun)); color:var(--ink-on-sun);
+    border:2px solid var(--sun-deep); border-radius:16px; padding:15px; font-size:17px; font-weight:800;
+    cursor:pointer; min-height:52px; box-shadow:0 3px 0 var(--sun-deep); font-family:inherit;}
+  .pw-buy:active{transform:translateY(3px); box-shadow:0 0 0 var(--sun-deep);}
+  .pw-sub{width:100%; background:transparent; border:0; color:var(--muted); padding:12px; font-size:14.5px;
+    font-weight:700; cursor:pointer; margin-top:2px; min-height:48px; font-family:inherit;}
+  .pw-note{color:var(--muted); font-size:11.5px; text-align:center; margin-top:12px; line-height:1.5; font-weight:600;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*:before,*:after{animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;}
+  }
+</style>
+</head>
+<body>
+<div id="webBar" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 16px;font:600 13px/1.3 -apple-system,system-ui,sans-serif;background:#111;color:#f5f0e6">
+  <span>Free in your browser · MIDI export in the app</span>
+  <a href="https://apps.apple.com/app/apple-store/id6787716007?pt=129125244&mt=8&ct=web-bar" target="_blank" rel="noopener" style="flex:none;color:#111;background:#f5c15c;border-radius:999px;padding:10px 14px;text-decoration:none">Get the app</a>
+</div>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="7" cy="17" r="3" fill="#3A2A00"/><circle cx="18" cy="15" r="3" fill="#3A2A00"/>
+          <path d="M10 17V6l11-2v11" stroke="#3A2A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ChordLoop</h1>
+        <div class="sub">Progression Studio</div>
+      </div>
+    </div>
+    <span class="tag">tap · arrange · loop</span>
+  </header>
+
+  <!-- THREE AREAS, NOT NINE CARDS.
+       The dark build put every control on one scroll and buried the thing you are
+       actually making in the middle of it. Now the app is a flow you can say out loud:
+       pick a key → tap chords → hear the loop → tweak the sound → save it.
+       Build holds the flow. Sound holds the arrangement. Ideas holds what you kept.
+       Everything advanced — export, MIDI, share, clear, diagnostics — is one tap down
+       inside a labelled expander, so the default screen stays short. -->
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <button type="button" class="tab on" id="tabBuild" data-tab="build" role="tab"
+      aria-selected="true" aria-controls="panelBuild"><span class="tico" aria-hidden="true">🎹</span>Build</button>
+    <button type="button" class="tab" id="tabIdeas" data-tab="ideas" role="tab"
+      aria-selected="false" aria-controls="panelIdeas"><span class="tico" aria-hidden="true">💛</span>Ideas</button>
+    <button type="button" class="tab" id="tabSettings" data-tab="settings" role="tab"
+      aria-selected="false" aria-controls="panelSettings"><span class="tico" aria-hidden="true">⚙️</span>Settings</button>
+  </nav>
+
+  <!-- ============================ BUILD ============================ -->
+  <section class="panel" id="panelBuild" role="tabpanel" aria-labelledby="tabBuild">
+
+    <div class="keybar">
+      <select id="key" aria-label="Key"></select>
+      <div class="seg" id="mode" role="group" aria-label="Scale">
+        <button type="button" data-mode="major" class="on" aria-pressed="true">Major</button>
+        <button type="button" data-mode="minor" aria-pressed="false">Minor</button>
+      </div>
+      <div class="seg" id="seventhsToggle" role="group" aria-label="Chord type">
+        <button type="button" data-sev="off" class="on" aria-pressed="true">Triads</button>
+        <button type="button" data-sev="on" aria-pressed="false">7ths</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Tap a chord to hear it — and add it</div>
+      <div class="chords" id="palette"></div>
+      <details class="more">
+        <summary>Or start from a classic progression</summary>
+        <div class="presets" id="presets"></div>
+      </details>
+    </div>
+
+    <div class="card" id="progCard">
+      <div class="label">Your loop</div>
+      <div class="prog" id="prog"><span class="empty">Empty — tap chords above to add them.</span></div>
+      <div class="hint" id="progHint">Tap to hear · drag to reorder · ✕ to remove</div>
+      <div class="controls">
+        <button type="button" class="btn primary" id="save">＋ Save this idea</button>
+      </div>
+      <details class="more">
+        <summary>More things to do with this loop</summary>
+        <div class="controls">
+          <button type="button" class="btn" id="exportAudio">♫ Export audio</button>
+          <button type="button" class="btn ghost" id="midi">⭳ MIDI</button>
+        </div>
+        <div class="controls">
+          <button type="button" class="btn ghost" id="share">⤴ Share text</button>
+          <button type="button" class="btn ghost" id="clear">Clear</button>
+        </div>
+      </details>
+    </div>
+
+    <!-- SOUND lives here now, under the loop. Jonathan's note: building and hearing are one
+         job, so they are one tab — chords at the top, the way they play a scroll below. -->
+    <div class="card" id="soundCard">
+      <div class="label">Sound</div>
+      <div class="row" style="gap:10px;">
+        <select id="instSel" aria-label="Instrument">
+          <optgroup label="Keys">
+            <option value="piano" data-inst="piano">Grand Piano</option>
+            <option value="rhodes" data-inst="rhodes">Electric Piano</option>
+            <option value="organ" data-inst="organ">Organ</option>
+            <option value="harmonium" data-inst="harmonium">Harmonium</option>
+          </optgroup>
+          <optgroup label="Strings you pluck">
+            <option value="guitar" data-inst="guitar">Nylon Guitar</option>
+            <option value="steel" data-inst="steel">Steel Guitar</option>
+            <option value="eguitar" data-inst="eguitar">Electric Guitar</option>
+            <option value="harp" data-inst="harp">Harp</option>
+          </optgroup>
+          <optgroup label="Sustained &amp; tuned">
+            <option value="pad" data-inst="pad">Warm Pad</option>
+            <option value="strings" data-inst="strings">Strings</option>
+            <option value="synth" data-inst="synth">Synth</option>
+            <option value="vibes" data-inst="vibes">Vibraphone</option>
+            <option value="marimba" data-inst="marimba">Marimba</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="sublabel2" style="margin-top:14px;">How the chords play</div>
+      <div class="insts" id="feel" role="group" aria-label="Feel">
+        <button type="button" data-feel="arp" class="on" aria-pressed="true">Arpeggio</button>
+        <button type="button" data-feel="strum" aria-pressed="false">Strum</button>
+        <button type="button" data-feel="block" aria-pressed="false">Block</button>
+      </div>
+
+      <div class="setrow">
+        <div>
+          <div class="sublabel2">Bass</div>
+          <div class="insts" id="bass" role="group" aria-label="Bass">
+            <button type="button" data-bass="on" class="on" aria-pressed="true">On</button>
+            <button type="button" data-bass="off" aria-pressed="false">Off</button>
+          </div>
+        </div>
+        <div>
+          <div class="sublabel2">Drums</div>
+          <div class="insts" id="drums" role="group" aria-label="Drums">
+            <button type="button" data-drum="off" class="on" aria-pressed="true">Off</button>
+            <button type="button" data-drum="backbeat" aria-pressed="false">Backbeat</button>
+            <button type="button" data-drum="driving" aria-pressed="false">Driving</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== SETTINGS =========================== -->
+  <section class="panel" id="panelSettings" role="tabpanel" aria-labelledby="tabSettings" hidden>
+
+    <div class="card">
+      <div class="label">Appearance</div>
+      <div class="sublabel2">Theme</div>
+      <div class="insts" id="themePick" role="group" aria-label="Theme">
+        <button type="button" data-theme="cream" class="on" aria-pressed="true">Cream</button>
+        <button type="button" data-theme="paper" aria-pressed="false">Paper</button>
+        <button type="button" data-theme="mint" aria-pressed="false">Mint</button>
+        <button type="button" data-theme="slate" aria-pressed="false">Slate</button>
+      </div>
+      <div class="sublabel2" style="margin-top:14px;">Accent</div>
+      <div class="insts" id="accentPick" role="group" aria-label="Accent colour">
+        <button type="button" data-accent="sun" class="on" aria-pressed="true">Sun</button>
+        <button type="button" data-accent="teal" aria-pressed="false">Teal</button>
+        <button type="button" data-accent="coral" aria-pressed="false">Coral</button>
+        <button type="button" data-accent="sky" aria-pressed="false">Sky</button>
+        <button type="button" data-accent="violet" aria-pressed="false">Violet</button>
+      </div>
+    </div>
+
+    <!-- Everything the screens used to explain in-line lives here, so the app itself stays
+         quiet and the answers are still one tap away. -->
+    <div class="card">
+      <div class="label">Frequently asked</div>
+
+      <details class="more"><summary>How do I build a loop?</summary>
+        <div class="hint">Pick a key at the top, then tap chords to hear them — each tap adds
+          that chord to your loop. Every chord offered belongs to the key, so they all sound
+          good together. Drag a step to reorder it, tap ✕ to remove it.</div></details>
+
+      <details class="more"><summary>What do Major, Minor and 7ths do?</summary>
+        <div class="hint">Major is bright, minor is moody. <b>7ths</b> swaps the three-note
+          chords for four-note ones, which sounds jazzier and softer.</div></details>
+
+      <details class="more"><summary>Can one chord play differently from the rest?</summary>
+        <div class="hint">Yes. <b>How the chords play</b> sets the default for the whole loop.
+          Any single step can override it — tap the small style button under that chord.</div></details>
+
+      <details class="more"><summary>What is the difference between Export audio and MIDI?</summary>
+        <div class="hint">Export audio makes a real sound file you can send to anyone.
+          MIDI drops the notes straight into GarageBand or Logic so you can keep writing.</div></details>
+
+      <details class="more"><summary>Where are my saved ideas kept?</summary>
+        <div class="hint">On this device, in this app. Each saved idea keeps its own key,
+          sound and tempo — opening one puts every control back the way you left it.</div></details>
+
+      <details class="more"><summary>What does Pro unlock?</summary>
+        <div class="hint">Ten more instruments, both drum patterns, and MIDI export.
+          It is a one-time purchase, not a subscription.</div></details>
+    </div>
+
+    <!-- Diagnostics. Two builds once shipped inaudible, so "is it making sound at all"
+         must stay answerable on the device. -->
+    <div class="card">
+      <div class="label">Sound not working?</div>
+      <div class="hint" style="margin-top:0;">Tap for a one-second test tone. If you hear it,
+        audio is working — including with the ring/silent switch on.</div>
+      <button type="button" class="btn" id="testTone">🔊 Test sound</button>
+      <div class="foot" id="sndStatus" style="text-align:left;">loading studio sounds…</div>
+      <div class="foot" id="sndSession" style="text-align:left;"></div>
+    </div>
+  </section>
+
+  <!-- ============================ IDEAS ============================ -->
+  <section class="panel" id="panelIdeas" role="tabpanel" aria-labelledby="tabIdeas" hidden>
+    <div class="card">
+      <div class="label">Saved ideas</div>
+      <div class="saved" id="saved"><span class="empty">Nothing saved yet.</span></div>
+      <div class="hint">Each saved idea keeps its own key, sound and tempo. Tap one to open it,
+        ♫ to export it as an audio file you can share, ✕ to delete it.</div>
+    </div>
+  </section>
+
+  <!-- CC-BY on the sample sets requires attribution wherever they are distributed, and
+       this app IS the distribution. SAMPLE-LICENSES.md carries the full text. Kept outside
+       the tabs so it is on screen in every section, not hidden behind one. -->
+  <div class="foot">Sounds: Salamander Grand Piano (Alexander Holm) · tonejs-instruments
+    (VSCO2, Univ. of Iowa, Karoryfer, Freesound) · CC-BY 3.0 · VCSL instruments &amp; drums
+    (Sam Gossner, CC0) · Room: Spokane Woman's Club impulse response (OpenAIR, CC-BY)</div>
+
+  <div class="foot">ChordLoop · runs on-device · no internet needed</div>
+  <div class="foot links">
+    <a id="lnkPrivacy" href="https://jonathanbbiles.github.io/chordloop/privacy.html">Privacy Policy</a>
+    <span aria-hidden="true">·</span>
+    <a id="lnkSite" href="https://jonathanscribbles.com">jonathanscribbles.com</a>
+  </div>
+
+  <!-- THE TRANSPORT IS PINNED. Play is the one control you reach for constantly, and it
+       has to work from every tab and from any scroll position. -->
+  <div class="transport" id="transport">
+    <div class="tbar">
+      <button type="button" class="btn play" id="play">▶ Play loop</button>
+      <button type="button" class="btn stop" id="stop" aria-label="Stop">■</button>
+      <div class="tempo">
+        <input type="range" id="tempo" min="50" max="180" value="92" aria-label="Tempo" />
+        <span class="bpm" id="bpmLabel">92 BPM</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Copied!</div>
+
+  <!-- Per-chord play style. Rendered from FEELS so the sheet and the engine can never
+       drift apart: every option here is a key playBar() dispatches on. -->
+  <div id="feelSheet" role="dialog" aria-modal="true" aria-labelledby="fsTitle">
+    <div class="fs-card">
+      <h2 id="fsTitle">How this chord plays</h2>
+      <div class="fs-sub" id="fsSub"></div>
+      <div class="fs-note">Pick a style to hear it straight away. It is saved with the
+        progression and it is what you get in the exported audio.</div>
+      <div id="fsList"></div>
+      <button type="button" class="pw-sub" id="fsClose">Done</button>
+    </div>
+  </div>
+
+  <div id="paywall">
+    <div class="pw-card">
+      <h2>ChordLoop Pro</h2>
+      <div class="pw-price">$3.99 · one-time unlock</div>
+      <ul class="pw-list">
+        <li>Per-chord play styles — give every chord in a progression its own feel: block, strum, arpeggio up or down, or a pattern</li>
+        <li>Export your progressions to MIDI — drop them into GarageBand, Logic, or any DAW</li>
+        <li>Drum grooves — Backbeat &amp; Driving</li>
+        <li>10 more instruments — Organ, Harmonium, Nylon, Steel &amp; Electric Guitar, Harp, Strings, Synth, Vibraphone, Marimba</li>
+      </ul>
+      <button class="pw-buy" id="pwBuy">Unlock everything — $3.99</button>
+      <button class="pw-sub" id="pwRestore">Restore purchase</button>
+      <button class="pw-sub" id="pwClose">Maybe later</button>
+      <!-- Production copy is the DEFAULT, static in the markup. A reviewer reads whatever
+           ships here, so the honest App Store string must be what renders even if no script
+           runs. The browser-only variant is swapped in at runtime, never the other way. -->
+      <div class="pw-note">One-time purchase — no subscription. Restores free on your other devices with the same Apple ID. Everything else in ChordLoop stays free forever.</div>
+      <div class="pw-legal">
+        <a id="pwPrivacy" href="https://jonathanbbiles.github.io/chordloop/privacy.html">Privacy Policy</a>
+      </div>
+    </div>
+  </div>
+
+<script src="samples/manifest.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  var MODES = {
+    major:{ steps:[0,2,4,5,7,9,11], roman:["I","ii","iii","IV","V","vi","vii°"] },
+    minor:{ steps:[0,2,3,5,7,8,10], roman:["i","ii°","III","iv","v","VI","VII"] }
+  };
+  var PRESETS = [
+    { name:"Pop  I–V–vi–IV",  deg:[0,4,5,3] },
+    { name:"50s  I–vi–IV–V",  deg:[0,5,3,4] },
+    { name:"Sensitive  vi–IV–I–V", deg:[5,3,0,4] },
+    { name:"Ballad  I–IV–vi–V", deg:[0,3,5,4] },
+    { name:"Journey  I–iii–IV–V", deg:[0,2,3,4] },
+    { name:"Epic  i–VI–III–VII", deg:[0,5,2,6] }
+  ];
+
+  var state = { root:0, mode:"major", sevenths:false, instrument:"piano", feel:"arp", drums:"off",
+                bass:"on", pro:false, chords:[], progression:[], progFeels:[], bpm:92 };
+
+  /* ---------------- play styles (per chord) ----------------
+     `state.feel` is the loop's default. `state.progFeels` runs in lockstep with
+     `state.progression` and holds, per step, either one of these keys or null meaning
+     "follow the loop" — so a progression built before this existed plays exactly as it
+     did, and one chord can break from the loop without the others moving.
+
+     This registry is the single source of truth: the picker is rendered from it and
+     playBar() dispatches on the same keys, so the sheet and the engine cannot drift.
+     Every mutation of the progression goes through the prog* helpers below — two arrays
+     kept in step by hand is how a style silently ends up on the wrong chord. */
+  var FEELS = {
+    block:   { glyph:"▬",  short:"Block",   label:"Block",        desc:"Held — the whole chord rings for the bar" },
+    strum:   { glyph:"≡",  short:"Strum",   label:"Strum",        desc:"Down, up, down, up — like a hand across strings" },
+    arp:     { glyph:"↕",  short:"Arp",     label:"Arpeggio",     desc:"Up and back down through the chord" },
+    arpup:   { glyph:"↑",  short:"Arp",     label:"Arpeggio up",  desc:"Climbing — bottom note up to the top" },
+    arpdown: { glyph:"↓",  short:"Arp",     label:"Arpeggio down",desc:"Falling — top note down to the bottom" },
+    pattern: { glyph:"◆",  short:"Pattern", label:"Pattern",      desc:"A repeating figure — low, high, middle, high" }
+  };
+  var FEEL_ORDER = ["block","strum","arp","arpup","arpdown","pattern"];
+  function isFeel(f){ return !!(f && Object.prototype.hasOwnProperty.call(FEELS, f)); }
+  /* What step `pos` will actually play: its own style, or the loop's. */
+  function feelAt(pos){ var f = state.progFeels[pos]; return isFeel(f) ? f : state.feel; }
+  function normFeels(list, n){ var out=[], i;
+    for(i=0;i<n;i++){ var f = list && list[i]; out.push(isFeel(f) ? f : null); }
+    return out; }
+  function progAdd(idx){
+    state.progression.push(idx); state.progFeels.push(null);
+    if(state.progression.length>16){ state.progression.shift(); state.progFeels.shift(); } }
+  function progRemove(pos){ closeFeelSheet();
+    state.progression.splice(pos,1); state.progFeels.splice(pos,1); }
+  function progMove(from, to){
+    var i=state.progression.splice(from,1)[0], f=state.progFeels.splice(from,1)[0];
+    state.progression.splice(to,0,i); state.progFeels.splice(to,0,f); }
+  function progSetAll(list, feels){ closeFeelSheet();
+    state.progression = (list||[]).slice();
+    state.progFeels = normFeels(feels, state.progression.length); }
+  /* Unchanged rule, longer list: the three free voices stay free (and the free one is now
+     the best sample set in the app — a real Steinway), and everything added on top of the
+     original six is Pro, exactly like the original six. Nothing about how the entitlement
+     is granted is touched anywhere in this file; see the ENTITLEMENT block below. */
+  var PRO_INSTS = ["organ","harmonium","guitar","steel","eguitar","harp","synth","strings","vibes","marimba"];
+  var PRO_DRUMS = ["backbeat","driving"];
+  try{ state.pro = localStorage.getItem("chordloop_pro")==="1"; }catch(e){}
+
+  /* ---------------- audio session + the media route ----------------
+     THE BUG THIS REPLACES. 1.0.3 shipped a Capacitor plugin that JavaScript called on
+     every gesture to re-assert AVAudioSession .playback — from audio(), which runs on
+     every single chord tap, and again on visibilitychange/pageshow/focus. On device the
+     app went COMPLETELY silent, in every ringer position: re-activating the session
+     underneath WebKit's audio unit while it is rendering is not the same thing as
+     configuring the session once, from native lifecycle events.
+
+     THE REFERENCE IS SCOOTSTEP, which is audible on the device. Its shape, copied here:
+
+       1. NATIVE, ONCE, FROM LIFECYCLE. scripts/patch-ios-audio.sh (taken from ScootStep)
+          patches the generated AppDelegate to set .playback + setActive at launch and
+          re-assert on didBecomeActive / interruption / route change / media-services
+          reset. JavaScript never touches the session. The native side pushes what iOS
+          actually granted into window.__clAudioSession, so it is READABLE here — and
+          shown in the app — without ever being writable from here.
+
+       2. A LIVE MEDIA ELEMENT. This is the part ChordLoop never had. An HTMLAudioElement
+          that is actually playing is what makes WKWebView hold a real media playback
+          route open. A bare AudioContext does not reliably do that: iOS suspends it
+          aggressively, and it can come back from resume() reporting "running" and still
+          produce no sound. So a silent looping WAV plays for as long as ChordLoop needs
+          to be audible. Inaudible, costs nothing, keeps the route alive underneath the
+          Web Audio graph.
+
+       3. PRIME ON EVERY GESTURE. Create-or-resume the context and push one empty buffer
+          through it inside a real tap — the classic iOS unlock — and arm the keepalive in
+          the same gesture, because iOS only grants playback it can attribute to one. */
+
+  /* What the native side reported about the LIVE session. Read-only, on purpose. */
+  function nativeSession(){ try{ return window.__clAudioSession || null; }catch(e){ return null; } }
+
+  var KeepAlive = (function(){
+    var el = null, url = null, held = 0, lastError = null;
+
+    function silentWavUrl(){
+      if(url) return url;
+      var rate = 8000, secs = 0.25, n = Math.floor(rate*secs), bytes = 44 + n*2;
+      var b = new ArrayBuffer(bytes), v = new DataView(b), i;
+      function str(off, s){ for(i=0;i<s.length;i++) v.setUint8(off+i, s.charCodeAt(i)); }
+      str(0,"RIFF"); v.setUint32(4, bytes-8, true); str(8,"WAVEfmt ");
+      v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+      v.setUint32(24,rate,true); v.setUint32(28,rate*2,true);
+      v.setUint16(32,2,true); v.setUint16(34,16,true);
+      str(36,"data"); v.setUint32(40, n*2, true);        // samples left at zero = silence
+      try{ url = URL.createObjectURL(new Blob([b], { type:"audio/wav" })); }
+      catch(e){ url = null; lastError = String(e && e.message || e); }
+      return url;
+    }
+    function ensure(){
+      if(el) return el;
+      var u = silentWavUrl(); if(!u) return null;
+      el = new Audio(u);
+      el.loop = true; el.playsInline = true; el.preload = "auto";
+      // Not 0: a truly silent element is easier for the system to treat as nothing at all.
+      el.volume = 0.01;
+      try{ el.setAttribute("playsinline",""); el.setAttribute("webkit-playsinline",""); }catch(e){}
+      return el;
+    }
+    // Called from inside a real tap. iOS only grants playback it can attribute to a
+    // gesture, and every note ChordLoop plays afterwards rides on that grant.
+    function arm(){
+      var a = ensure(); if(!a) return;
+      if(a.paused){ var p = a.play(); if(p && p.catch) p.catch(function(e){ lastError = String(e && e.message || e); }); }
+    }
+    function hold(on){
+      held = Math.max(0, held + (on ? 1 : -1));
+      var a = ensure(); if(!a) return;
+      if(held > 0){ if(a.paused){ var p = a.play(); if(p && p.catch) p.catch(function(e){ lastError = String(e && e.message || e); }); } }
+      else { try{ a.pause(); }catch(e){} }
+    }
+    function rearm(){ if(held > 0) arm(); }             // after a trip to the background
+    return { arm:arm, hold:hold, rearm:rearm,
+             get active(){ return !!(el && !el.paused); },
+             get held(){ return held; },
+             get error(){ return lastError; } };
+  })();
+
+  /* Hold the media route open for a tapped chord, then let it go. Without the timer a
+     single tap would leave the element playing forever; without the hold at all, a chord
+     tapped after a pause can land on a route that has already been torn down. */
+  var chordHold = 0;
+  function holdForChord(seconds){
+    KeepAlive.hold(true); chordHold++;
+    setTimeout(function(){ chordHold--; KeepAlive.hold(false); },
+               Math.max(600, (seconds || 2) * 1000));
+  }
+
+  function primeAudio(){
+    try{
+      var C = window.AudioContext || window.webkitAudioContext;
+      if(!AC && C) audio();                              // builds the graph; see below
+      if(AC && AC.state === "suspended"){ var p = AC.resume(); if(p && p.catch) p.catch(function(){}); }
+      if(AC){
+        // The one-sample unlock: pushing an empty buffer through the destination inside a
+        // gesture is what iOS actually accepts as "this page plays audio".
+        var b = AC.createBuffer(1, 1, 22050), s = AC.createBufferSource();
+        s.buffer = b; s.connect(AC.destination); s.start(0);
+      }
+    }catch(e){ logLoud("primeAudio: " + (e && e.message || e)); }
+    try{ KeepAlive.arm(); }catch(e){}                    // same gesture unlocks the media route
+    renderSoundCheck();
+  }
+
+  /* ---------------- audio engine ----------------
+     THE ENGINE IS CONTEXT-AGNOSTIC. Everything below schedules into whatever rig is
+     currently installed in these four variables. There are two rigs: the live
+     AudioContext the phone plays through, and a throwaway OfflineAudioContext used to
+     RENDER a progression to a file (see renderProgressionToWav). Exporting audio that
+     sounds different from what you just heard would be a bug, so export does not get its
+     own code path — it borrows this one. */
+  var AC=null, master=null, verbIn=null, drumNoise=null;
+  var LIVE = null;                       // the rig wired to the speaker
+
+  /* Master bus + glue compressor + room, built for ONE context. */
+  function buildRig(ctx){
+    var m = ctx.createGain(); m.gain.value = 0.8;
+    /* Gentle glue, not a limiter. The old settings (ratio 3.2, knee 26) squashed a
+       four-note piano chord into one flat block — a big part of why the app sounded
+       programmed rather than played. */
+    var comp = ctx.createDynamicsCompressor();
+    comp.threshold.value=-13; comp.knee.value=18; comp.ratio.value=2.4; comp.attack.value=0.008; comp.release.value=0.28;
+    m.connect(comp); comp.connect(ctx.destination);
+    var v = ctx.createConvolver(); v.buffer = makeIR(ctx, 2.6, 3.0);
+    /* The tail is darkened before it is mixed back in. A bright white-noise reverb is
+       the single most "cheap plugin" sound there is; real rooms lose treble first. */
+    var damp = ctx.createBiquadFilter(); damp.type="lowpass"; damp.frequency.value=3400; damp.Q.value=0.4;
+    var vg = ctx.createGain(); vg.gain.value = 0.5;
+    v.connect(damp); damp.connect(vg); vg.connect(comp);
+    var rig = { ctx: ctx, master: m, verbIn: v, damp: damp, verbGain: vg, room: "generated" };
+    installRoom(rig);
+    return rig;
+  }
+
+  /* THE ROOM. Once the recorded hall (samples/rooms/hall.m4a, a real impulse response —
+     see SAMPLE-LICENSES.md) has decoded, a rig's reverb is swapped onto it: a fresh
+     ConvolverNode on the same damping/return chain, and `verbIn` pointed at it so every
+     note scheduled from then on is sent there. Until then — and if it never loads — the
+     generated room above stays, so there is never a moment with no reverb at all.
+     A recorded room already loses its treble the way rooms do, so the extra darkening the
+     generated tail needed is opened right up for it. */
+  function installRoom(rig){
+    var b = SMP.room;
+    if(!b || !rig || rig.room === "recorded") return;
+    if(b.sampleRate !== rig.ctx.sampleRate) return;   // a convolver needs a matching rate
+    try{
+      var v = rig.ctx.createConvolver(); v.buffer = b;
+      v.connect(rig.damp);
+      rig.damp.frequency.value = 9000;
+      rig.verbGain.gain.value = 0.62;
+      rig.verbIn = v; rig.room = "recorded";
+      if(rig === LIVE && AC === LIVE.ctx) verbIn = v;
+    }catch(e){ logLoud("room impulse could not be installed: " + (e && e.message || e)); }
+  }
+
+  /* Install `rig` for the duration of fn(). Scheduling a bar — or a whole export — is one
+     synchronous pass, so nothing can interleave and this stays safe; it is also what lets
+     every voice function below keep referring to plain `AC` and `master`. */
+  function withRig(rig, fn){
+    var pA=AC, pM=master, pV=verbIn, pN=drumNoise;
+    AC=rig.ctx; master=rig.master; verbIn=rig.verbIn; drumNoise=null;
+    try{ return fn(); } finally { AC=pA; master=pM; verbIn=pV; drumNoise=pN; }
+  }
+
+  function audio(){
+    if(!LIVE){
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      LIVE = buildRig(ctx);
+      AC = LIVE.ctx; master = LIVE.master; verbIn = LIVE.verbIn;
+    }
+    /* Deliberately NOT re-asserting the audio session here. This is the line that made
+       1.0.3 silent: audio() runs on every chord tap, so every tap re-activated
+       AVAudioSession underneath WebKit. The session is native lifecycle's job now. */
+    loadSamples();
+    return AC;
+  }
+
+  /* A room, not a noise burst: a handful of early reflections, then a stereo-decorrelated
+     tail that loses its top end as it decays. Two channels generated independently is what
+     makes it sound wide instead of like one mono blur in the middle of your head. */
+  function makeIR(ctx, seconds, decay){
+    var rate=ctx.sampleRate, len=Math.floor(rate*seconds), buf=ctx.createBuffer(2,len,rate);
+    var early = [[0.011,0.42],[0.019,0.31],[0.027,0.26],[0.041,0.22],[0.058,0.17],[0.079,0.13]];
+    for(var ch=0; ch<2; ch++){
+      var d=buf.getChannelData(ch), lp=0;
+      for(var i=0;i<len;i++){
+        var x=(Math.random()*2-1)*Math.pow(1-i/len, decay);
+        lp += (x-lp)*0.34;                       // one-pole lowpass: darker as it decays
+        d[i]=lp;
+      }
+      for(var e=0;e<early.length;e++){
+        var at=Math.floor(rate*early[e][0]*(ch?1.07:1));   // ear-to-ear offset
+        if(at<len) d[at] += early[e][1]*(Math.random()>0.5?1:-1);
+      }
+    }
+    return buf;
+  }
+  function noiseBuf(){ if(drumNoise) return drumNoise; var len=Math.floor(AC.sampleRate*0.5), b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
+    for(var i=0;i<len;i++) d[i]=Math.random()*2-1; drumNoise=b; return b; }
+  function midiToFreq(m){ return 440 * Math.pow(2,(m-69)/12); }
+  function out(node, wet, pan){
+    var head = node;
+    if(pan && AC.createStereoPanner){
+      var p = AC.createStereoPanner(); p.pan.value = Math.max(-0.6, Math.min(0.6, pan));
+      node.connect(p); head = p;
+    }
+    head.connect(master);
+    if(wet>0){ var s=AC.createGain(); s.gain.value=wet; head.connect(s); s.connect(verbIn); }
+  }
+  function osc(type,freq,detune){ var o=AC.createOscillator(); o.type=type; o.frequency.value=freq; if(detune)o.detune.value=detune; return o; }
+
+  /* ---------------- sampled instruments ----------------
+     Every sound ChordLoop makes is a recording of a real instrument being played. The
+     oscillator voices further down are kept as a fallback for the moment before a set
+     finishes decoding, so a tap is never silent — but on a normal launch you are
+     hearing recordings.
+
+     Layout: www/samples/<instrument>/<midi>.m4a, roughly one recording every 3
+     semitones, plus www/samples/drums/<piece>-v<layer>-r<take>.m4a.
+     scripts/fetch-samples.mjs builds it and SAMPLE-LICENSES.md says where each set came
+     from and who must be credited. Nothing here touches the network — the files ship
+     inside the app, so this all works in airplane mode. */
+  var SMP = { base:"samples/", manifest:null, buf:{}, peak:{}, want:{}, rr:{}, pending:[],
+              stats:{ loaded:0, failed:0, expected:0 }, fellBack:0 };
+
+  /* Loud on purpose. 1.0.2 shipped a silent fallback: when the samples failed to load the
+     app quietly played the old oscillator voices and there was no way to tell from the
+     outside, so "it still sounds synthetic" was unexplainable. Every failure now says so. */
+  function logLoud(msg){
+    try{ console.warn("[ChordLoop audio] " + msg); }catch(e){}
+  }
+
+  /* Synthesised BY DESIGN, not because a sample set failed to load. A pad and a synth
+     lead are synthesiser sounds — sampling one and looping the render (which is what
+     FluidR3's pad_2_warm and lead_2_sawtooth were) throws away the only advantages a
+     synth has: it never has to stretch a recording, it holds forever without a loop
+     point, and it is perfectly in tune. Everything else in ChordLoop is a real recording.
+     Keeping this list explicit is what stops a genuinely missing sample set from hiding
+     behind "oh, that one is meant to be synthetic". */
+  var SYNTH_INSTS = ["pad", "synth"];
+  function isSynthVoice(inst){ return SYNTH_INSTS.indexOf(inst) >= 0; }
+
+  function manifestOf(inst){ return (SMP.manifest && SMP.manifest.instruments[inst]) || null; }
+  function isSustained(inst){ var m=manifestOf(inst); return !!(m && m.sustained); }
+
+  /* How each voice behaves once the recording is playing. `peak` is the level one note at
+     full velocity should reach (the recordings arrive at wildly different levels, so this
+     is what keeps switching instruments from changing how loud the app is); `rel` is how
+     long a note takes to let go — a piano rings on long after the bar ends and cutting
+     that off is most of what made the old engine sound like a toy; `strum` is the delay
+     between adjacent notes of a chord; `verb` is the reverb send. */
+  var CHAR = {
+    piano:     { peak:0.42, rel:0.85, verb:0.26, strum:0.014, spread:0.22 },
+    rhodes:    { peak:0.40, rel:0.60, verb:0.26, strum:0.014, spread:0.20 },
+    pad:       { peak:0.26, rel:1.10, verb:0.46, strum:0,     spread:0.30 },
+    organ:     { peak:0.30, rel:0.22, verb:0.34, strum:0,     spread:0.26 },
+    guitar:    { peak:0.42, rel:0.70, verb:0.28, strum:0.030, spread:0.24 },
+    steel:     { peak:0.42, rel:0.70, verb:0.28, strum:0.028, spread:0.24 },
+    eguitar:   { peak:0.40, rel:0.70, verb:0.24, strum:0.026, spread:0.24 },
+    strings:   { peak:0.26, rel:0.95, verb:0.44, strum:0.010, spread:0.30 },
+    harp:      { peak:0.40, rel:1.00, verb:0.38, strum:0.048, spread:0.26 },
+    harmonium: { peak:0.30, rel:0.30, verb:0.32, strum:0.008, spread:0.22 },
+    synth:     { peak:0.30, rel:0.35, verb:0.30, strum:0,     spread:0.24 },
+    vibes:     { peak:0.40, rel:0.90, verb:0.44, strum:0.020, spread:0.24 },
+    marimba:   { peak:0.44, rel:0.45, verb:0.30, strum:0.018, spread:0.22 },
+    bass:      { peak:0.44, rel:0.25, verb:0.08, strum:0,     spread:0 }
+  };
+  function chr(inst){ return CHAR[inst] || CHAR.piano; }
+  // Kept as separate names because ChordLoopAudio.diagnose() reports against them.
+  var SMP_PEAK = {}; Object.keys(CHAR).forEach(function(k){ SMP_PEAK[k]=CHAR[k].peak; });
+  var DRUM_PEAK = { kick:0.75, snare:0.52, hat:0.24 };
+
+  /* Normalisation is per GROUP, never per buffer. Levelling each buffer on its own would
+     flatten exactly what makes an instrument sound played rather than programmed: the
+     softest hi-hat is 18x quieter than the hardest, and that difference IS the dynamics.
+     Dividing a whole group by its loudest member fixes the absolute level and leaves the
+     internal balance — including a piano's natural register falloff — untouched. */
+  function bufPeak(b){
+    var pk = 0;
+    for(var c=0;c<b.numberOfChannels;c++){
+      var d = b.getChannelData(c);
+      for(var i=0;i<d.length;i++){ var v = d[i] < 0 ? -d[i] : d[i]; if(v > pk) pk = v; }
+    }
+    return pk;
+  }
+  function groupScale(group, target){
+    var pk = SMP.peak[group];
+    if(!pk) return 1;                 // nothing measured yet — play it flat rather than loud
+    return target / pk;
+  }
+
+  function pad3(n){ n = String(n); return n.length >= 3 ? n : ("000"+n).slice(-3); }
+  function layerGroup(inst, k){ return inst+"~v"+k; }
+
+  /* Loaded with XMLHttpRequest, NOT fetch().
+     1.0.2 shipped this with fetch() and every instrument came out of the synth fallback on
+     device. Inside the Capacitor WKWebView the app is served from capacitor://localhost —
+     a custom scheme handled by a WKURLSchemeHandler — and fetch() against a custom scheme
+     is a long-standing WebKit limitation. XHR goes through a different path in WebKit and
+     is the documented workaround. It also works identically in a normal browser, so there
+     is no reason to keep two code paths.
+
+     `path` is relative to www/samples/ and the base is prepended HERE, so every request in
+     this file is visibly app-local at the call site. That matters: the privacy policy says
+     ChordLoop never touches the internet, and this is where that stays checkable. */
+  function loadArrayBuffer(path, done, fail){
+    var url = SMP.base + path;
+    try{
+      var x = new XMLHttpRequest();
+      x.open("GET", url, true);
+      x.responseType = "arraybuffer";
+      x.onload = function(){
+        /* A custom-scheme response legitimately arrives with status 0, so 0 is not an
+           error here — but a real HTTP error code is, and saying "HTTP 404" beats letting
+           an error page's bytes fall through to the decoder and reporting "unable to
+           decode audio data" for what is actually a missing file. */
+        if(x.status >= 400){ fail(new Error(url+" -> HTTP "+x.status)); return; }
+        if(x.response && x.response.byteLength > 0) done(x.response);
+        else fail(new Error(url+" -> status "+x.status+", "+
+          (x.response ? x.response.byteLength : "no")+" bytes"));
+      };
+      x.onerror = function(){ fail(new Error(url+" -> transport error")); };
+      x.onabort = function(){ fail(new Error(url+" -> aborted")); };
+      x.send();
+    }catch(e){ fail(e); }
+  }
+
+  function decodeInto(inst, key, path){
+    return new Promise(function(resolve, reject){
+      loadArrayBuffer(path, function(ab){
+        // Safari still wants the callback form; newer engines also return a promise.
+        var settled = false;
+        var ok = function(b){ if(settled) return; settled = true; resolve(b); };
+        var no = function(e){ if(settled) return; settled = true; reject(e || new Error("decode failed: "+path)); };
+        try{
+          var p = AC.decodeAudioData(ab, ok, no);
+          if(p && p.then) p.then(ok, no);
+        }catch(e){ no(e); }
+      }, reject);
+    }).then(function(b){
+      (SMP.buf[inst] = SMP.buf[inst] || {})[key] = b;
+      var pk = bufPeak(b);
+      if(pk > (SMP.peak[inst] || 0)) SMP.peak[inst] = pk;
+      SMP.stats.loaded++;
+      renderSoundCheck();
+    }, function(err){
+      SMP.stats.failed++;
+      if(SMP.stats.failed <= 3) logLoud("sample load FAILED: " + (err && err.message || err));
+      renderSoundCheck();
+      throw err;
+    });
+  }
+
+  function loadInstrument(inst){
+    if(isSynthVoice(inst)) return;                 // nothing to load — it is synthesised
+    if(!SMP.manifest || SMP.want[inst]) return;
+    var m = manifestOf(inst);
+    if(!m) return;
+    SMP.want[inst] = true;
+    // Counted as each set commits to loading, so switching instruments grows the total
+    // rather than making the readout look stuck at 100%.
+    var L = m.layers || 1;
+    SMP.stats.expected += m.notes.length * L;
+    renderSoundCheck();
+    m.notes.forEach(function(n){
+      SMP.pending.push(decodeInto(inst, n, inst+"/"+pad3(n)+"."+m.ext)
+        .catch(function(){ /* this note keeps the synth fallback; the rest still load */ }));
+    });
+    /* The softer velocity layers, each its own group (`piano~v0` is the softest) so it is
+       levelled against its own loudest take. Loaded AFTER every main recording has been
+       queued: until a soft layer arrives, that note simply plays its loudest one. */
+    for(var k=0;k<L-1;k++){
+      (function(k){
+        m.notes.forEach(function(n){
+          SMP.pending.push(decodeInto(layerGroup(inst,k), n, inst+"/"+pad3(n)+"-v"+k+"."+m.ext)
+            .catch(function(){}));
+        });
+      })(k);
+    }
+  }
+
+  function loadDrums(){
+    if(!SMP.manifest || SMP.want.drums) return;
+    SMP.want.drums = true;
+    var d = SMP.manifest.drums;
+    Object.keys(d).forEach(function(id){
+      d[id].layers.forEach(function(l){ SMP.stats.expected += l.length; });
+    });
+    Object.keys(d).forEach(function(id){
+      // One group per PIECE ("drum:kick"), not one for the whole kit: the kick and the
+      // hi-hat must each be levelled against their own loudest take.
+      d[id].layers.forEach(function(rrs, vi){
+        rrs.forEach(function(file, ri){
+          SMP.pending.push(decodeInto("drum:"+id, vi+"-"+ri, "drums/"+file)
+            .catch(function(){}));
+        });
+      });
+    });
+  }
+
+  /* The manifest arrives as a <script src="samples/manifest.js"> global, not as a request
+     this code makes. One less thing that can fail on device, and if the tag itself didn't
+     load we know immediately and say so instead of silently synthesising. */
+  function loadSamples(){
+    if(!SMP.manifest){
+      SMP.manifest = window.CHORDLOOP_SAMPLES || null;
+      if(!SMP.manifest){
+        logLoud("manifest missing — samples/manifest.js did not load. Running on the " +
+                "oscillator fallback: the app is playable but every voice is synthesised.");
+        renderSoundCheck();
+        return;
+      }
+    }
+    loadInstrument(state.instrument); loadInstrument("bass"); loadDrums(); loadRoom();
+  }
+
+  /* Queued with the samples, so an export waits for the room too and never renders the
+     generated one into a file after the app has been playing the recorded one. A failure
+     is logged and resolves anyway: the generated room is a fine fallback, not an error. */
+  function loadRoom(){
+    var r = SMP.manifest && SMP.manifest.room;
+    if(!r || SMP.want.room || !AC) return;
+    SMP.want.room = true;
+    SMP.pending.push(new Promise(function(resolve){
+      loadArrayBuffer(r.file, function(ab){
+        var done = false;
+        var ok = function(b){ if(done) return; done = true; if(!SMP.room){ SMP.room = b; installRoom(LIVE); } resolve(); };
+        var no = function(e){ if(done) return; done = true; logLoud("room impulse failed to decode: " + (e && e.message || e)); resolve(); };
+        try{ var p = AC.decodeAudioData(ab, ok, no); if(p && p.then) p.then(ok, no); }catch(e){ no(e); }
+      }, function(err){ logLoud("room impulse failed to load: " + (err && err.message || err)); resolve(); });
+    }));
+  }
+
+  /* ---------------- the sound check ----------------
+     Two questions, answered on the device, in the app: is it playing the recordings, and
+     will it be heard with the ring switch on. Both used to be unanswerable without a Mac
+     and a cable, which is how 1.0.2 shipped sounding wrong in two different ways at once. */
+  var statusEl = null, sessionEl = null;
+  function renderSoundCheck(){ renderSampleStatus(); renderSessionStatus(); }
+
+  function renderSampleStatus(){
+    if(!statusEl) statusEl = document.getElementById("sndStatus");
+    if(!statusEl) return;
+    var s = SMP.stats;
+    if(!SMP.manifest){
+      statusEl.textContent = "⚠ backup synth — sample manifest failed to load";
+      statusEl.className = "foot warn";
+      return;
+    }
+    if(s.loaded === 0 && s.failed > 0){
+      statusEl.textContent = "⚠ backup synth — 0 of " + s.expected + " samples loaded";
+      statusEl.className = "foot warn";
+      return;
+    }
+    if(s.loaded < s.expected){
+      statusEl.textContent = "loading studio sounds — " + s.loaded + "/" + s.expected +
+        (s.failed ? " (" + s.failed + " failed)" : "");
+      statusEl.className = "foot";
+      return;
+    }
+    statusEl.textContent = s.failed
+      ? "⚠ " + s.loaded + " samples loaded, " + s.failed + " failed"
+      : s.loaded + " studio samples loaded";
+    statusEl.className = s.failed ? "foot warn" : "foot";
+  }
+
+  /* The two lines that make the next device test conclusive instead of another round of
+     "still no sound". Everything here is READ from the live state — the native session as
+     the AppDelegate reported it, and whether the media element is genuinely playing. */
+  function renderSessionStatus(){
+    if(!sessionEl) sessionEl = document.getElementById("sndSession");
+    if(!sessionEl) return;
+    var n = nativeSession(), bits = [];
+    if(n){
+      var playback = /playback/i.test(n.category || "");
+      bits.push(playback ? "🔔 media volume — plays with the ring switch on silent"
+                         : "⚠ session is " + (n.category || "?") + " — the silent switch will mute this");
+    }
+    bits.push(KeepAlive.active ? "media route open" : "media route idle");
+    if(AC) bits.push("engine " + AC.state);
+    if(KeepAlive.error) bits.push("⚠ " + KeepAlive.error);
+    sessionEl.textContent = bits.join(" · ");
+    sessionEl.className = (n && !/playback/i.test(n.category || "")) || KeepAlive.error
+      ? "foot warn" : "foot";
+  }
+
+  /* ---------------- the test tone ----------------
+     Deliberately the DUMBEST possible path to the speaker: one oscillator, one gain, straight
+     to AC.destination. It does not touch the master bus, the compressor, the reverb, the
+     panner, the sample loader or the voicer. So on the device it splits one question into
+     two answers:
+        tone audible, chords not  -> the route is fine; the fault is in the engine above it.
+        tone silent               -> nothing this app does with Web Audio can be heard, and
+                                     the session/route is the problem, not the music.
+     That distinction is what the last two builds could not make. */
+  function testTone(){
+    primeAudio();
+    var ac = audio();
+    try{ if(ac.state === "suspended") ac.resume(); }catch(e){}
+    KeepAlive.arm(); holdForChord(2.2);
+    var t = ac.currentTime + 0.05;
+    try{
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.value = 440;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t+0.02);
+      g.gain.setValueAtTime(0.35, t+0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+1.0);
+      o.connect(g); g.connect(ac.destination);          // NOT via master — that is the point
+      o.start(t); o.stop(t+1.05);
+      showToast("Test tone — 440 Hz for 1 second");
+    }catch(e){
+      showToast("Test tone failed: " + (e && e.message || e));
+      logLoud("test tone failed: " + (e && e.message || e));
+    }
+    setTimeout(renderSoundCheck, 120);
+  }
+
+  /* ---------------- voicing ----------------
+     The old engine stacked every chord in root position, straight off the scale degrees,
+     and moved all of it in parallel from chord to chord. That is the sound of an exercise,
+     not of music — it is a large part of "this is noise, not music". Real players hold
+     the notes two chords share and move the rest as little as possible.
+
+     voiceChord() does exactly that: it keeps each voice near where it just was, inside
+     the range the instrument was actually RECORDED in (an acoustic guitar sample pitched
+     up two octaves is the other classic fake-sounding move), and re-centres if the
+     progression starts to creep away. */
+  var VOICE = { last:null, inst:null };
+
+  function instRange(inst){
+    /* A synth voice has no recorded range, but it still needs a sensible one or the
+       voicer will happily put a pad chord in the cellar. */
+    if(isSynthVoice(inst)) return { lo: 45, hi: 81 };
+    var m = manifestOf(inst);
+    var lo = m && m.lo ? m.lo : 48, hi = m && m.hi ? m.hi : 84;
+    // Do not voice a chord right at the very bottom of a set: low thirds sound muddy on
+    // every instrument, and the lowest recording is usually the least useful one.
+    return { lo: lo + 2, hi: hi - 1 };
+  }
+
+  /* Every close-position inversion of the chord that fits the instrument, plus a drop-2
+     of each — which is the voicing a keyboard player actually reaches for, because it
+     opens a gap in the middle instead of stacking thirds. */
+  function candidates(pcs, r){
+    var uniq = [], seen = {};
+    for(var i=0;i<pcs.length;i++){ if(!seen[pcs[i]]){ seen[pcs[i]]=1; uniq.push(pcs[i]); } }
+    var list = [];
+    for(var rot=0; rot<uniq.length; rot++){
+      var order = uniq.slice(rot).concat(uniq.slice(0,rot));
+      for(var base=r.lo; base<=r.hi-6; base++){
+        if((((base % 12)+12)%12) !== order[0]) continue;
+        var v = [base], ok = true;
+        for(var k=1;k<order.length;k++){
+          var n = order[k] + 12*Math.ceil((v[k-1]+1-order[k])/12);
+          if(n > r.hi){ ok = false; break; }
+          v.push(n);
+        }
+        if(!ok) continue;
+        list.push(v);
+        // drop-2: the second voice from the top moves down an octave.
+        if(v.length >= 3){
+          var d = v.slice(); d[d.length-2] -= 12;
+          d.sort(function(a,b){ return a-b; });
+          if(d[0] >= r.lo) list.push(d);
+        }
+      }
+    }
+    return list;
+  }
+
+  /* Cost of moving from voicing P to voicing V: how far every voice has to travel, counted
+     in both directions so neither dropping a voice nor adding one is free. Plus a pull
+     toward the middle of the instrument, so a progression can wander but not walk away. */
+  function voicingCost(v, prev, center){
+    var c = 0, i, j, best;
+    if(prev && prev.length){
+      for(i=0;i<v.length;i++){
+        best = 1e9;
+        for(j=0;j<prev.length;j++) best = Math.min(best, Math.abs(v[i]-prev[j]));
+        c += best;
+      }
+      for(j=0;j<prev.length;j++){
+        best = 1e9;
+        for(i=0;i<v.length;i++) best = Math.min(best, Math.abs(prev[j]-v[i]));
+        c += best;
+      }
+    }
+    var centroid = v.reduce(function(a,b){ return a+b; },0)/v.length;
+    c += Math.abs(centroid - center) * 0.55;
+    // A third in the cellar is mud on every instrument ever recorded.
+    if(v.length>2 && v[1]-v[0] < 5 && v[0] < 52) c += 6;
+    // Keep the hand plausible: nothing wider than two octaves between outer voices.
+    if(v[v.length-1]-v[0] > 24) c += 12;
+    return c;
+  }
+
+  /* ---------------- guitar shapes ----------------
+     A guitarist does not voice a chord the way a pianist does. A strummed G is six strings
+     in a shape the hand already knows (320003), with open strings ringing and the root on
+     the bottom — not a drop-2 stack from a keyboard voicer. For the three guitars, chords
+     come from a search of the real fretboard in standard tuning instead.
+
+     A shape is legal when a hand could play it: at most four fingers (a barre across the
+     lowest fretted position counts as one), no more than four frets wide, muted strings
+     only below the bass (never in the middle), the root as the lowest note, and every
+     chord tone present (a seventh chord may drop its fifth, as guitarists do). Among
+     legal shapes the cheapest wins: open strings and low positions first — that ringing
+     is most of the sound of an acoustic guitar — more strings over fewer, and, once a
+     progression is under way, staying near where the hand already is.
+
+     Notes come back in STRING order, low E first, which is the order a pick crosses
+     them; GUITAR.strings[i] says which string note i is on, for the strummer. */
+  var TUNING = [40, 45, 50, 55, 59, 64];          // E2 A2 D3 G3 B3 E4
+  var GUITARS = { guitar:1, steel:1, eguitar:1 };
+  var GUITAR = { last:null, strings:null, pos:null };
+  function isGuitar(inst){ return !!GUITARS[inst]; }
+
+  function guitarShape(tones, inst){
+    var pcs = [], seen = {};
+    tones.forEach(function(n){ var pc=((n%12)+12)%12; if(!seen[pc]){ seen[pc]=1; pcs.push(pc); } });
+    var root = pcs[0], fifth = (root+7)%12;
+    var m = manifestOf(inst), hiNote = (m && m.hi ? m.hi : 76);   // never ask for an unrecorded note
+    // Per string: mute (-1) or any fret 0..12 that sounds a chord tone.
+    var opts = TUNING.map(function(open){
+      var o = [-1];
+      for(var f=0; f<=12; f++) if(pcs.indexOf((open+f)%12) >= 0 && open+f <= hiNote) o.push(f);
+      return o;
+    });
+    var best = null, bestCost = 1e9, frets = [0,0,0,0,0,0];
+    // Follows the keyboard voicer's memory, so resetVoicing() and an export's clean start reset it too.
+    var prevPos = (VOICE.inst === inst && VOICE.last && GUITAR.pos !== null) ? GUITAR.pos : null;
+    function score(){
+      var first = -1, i, f, notes = [], strs = [];
+      for(i=0;i<6;i++){ if(frets[i] >= 0){ if(first < 0) first = i; } else if(first >= 0) return; }
+      if(first < 0 || 6-first < 4) return;                       // at least four strings
+      var fretted = [], open = 0;
+      for(i=first;i<6;i++){ f = frets[i]; notes.push(TUNING[i]+f); strs.push(i); if(f>0) fretted.push(f); else open++; }
+      if(((notes[0]%12)+12)%12 !== root) return;                 // root in the bass
+      var have = {};
+      notes.forEach(function(n){ have[((n%12)+12)%12] = 1; });
+      for(i=0;i<pcs.length;i++) if(!have[pcs[i]] && !(pcs.length >= 4 && pcs[i] === fifth)) return;
+      var lo = 99, hi = 0;
+      fretted.forEach(function(x){ if(x<lo) lo=x; if(x>hi) hi=x; });
+      if(fretted.length && hi - lo > 3) return;                  // four frets wide at most
+      /* A barre (one finger flat across the lowest fret) counts as one finger — but only
+         if no OPEN string lies under it: the finger would fret that string too. */
+      var bLo = -1, bHi = -1;
+      for(i=first;i<6;i++) if(frets[i] === lo){ if(bLo < 0) bLo = i; bHi = i; }
+      var barre = fretted.length && bHi > bLo;
+      for(i=bLo; barre && i<=bHi; i++) if(frets[i] === 0) barre = false;
+      var atLo = fretted.filter(function(x){ return x === lo; }).length;
+      var fingers = fretted.length - (barre ? atLo - 1 : 0);
+      if(fingers > 4) return;
+      // Two strings on the same pitch: real shapes avoid it (it thins the chord).
+      var uni = 0;
+      for(i=1;i<notes.length;i++) for(var j=0;j<i;j++) if(notes[i] === notes[j]) uni++;
+      if(open && lo > 5) return;                                   // open strings only near the nut
+      var pos = fretted.length ? fretted.reduce(function(a,b){ return a+b; },0)/fretted.length : 0;
+      var c = pos * 0.55 - open * 0.6 - notes.length * 1.1 + (hi - lo) * 0.3 + fingers * 0.2 + uni * 0.9;
+      if(prevPos !== null) c += Math.abs(pos - prevPos) * 0.35;
+      if(c < bestCost){ bestCost = c; best = { notes: notes, strings: strs, pos: pos }; }
+    }
+    (function walk(i){
+      if(i === 6){ score(); return; }
+      for(var k=0;k<opts[i].length;k++){ frets[i] = opts[i][k]; walk(i+1); }
+    })(0);
+    return best;
+  }
+
+  function voiceChord(tones, inst){
+    if(isGuitar(inst)){
+      var g = guitarShape(tones, inst);
+      if(g){
+        GUITAR.last = g.notes.slice(); GUITAR.strings = g.strings.slice(); GUITAR.pos = g.pos;
+        VOICE.last = g.notes.slice(); VOICE.inst = inst;
+        return g.notes.slice();
+      }
+      GUITAR.strings = null;                    // no playable shape: keyboard voicing below
+    }
+    var r = instRange(inst);
+    var center = Math.max(r.lo + 7, Math.min(r.hi - 9, 62));
+    var prev = (VOICE.inst === inst && VOICE.last) ? VOICE.last : null;
+    var pcs = tones.map(function(n){ return ((n % 12) + 12) % 12; });
+
+    var list = candidates(pcs, r);
+    if(!list.length){
+      // Nothing fits the recorded range (a very narrow set) — fold the chord in and take it.
+      var fb = pcs.map(function(pc){
+        var n = pc + 12*Math.round((center-pc)/12);
+        while(n < r.lo) n += 12; while(n > r.hi) n -= 12; return n;
+      }).sort(function(a,b){ return a-b; });
+      VOICE.last = fb.slice(); VOICE.inst = inst;
+      return fb;
+    }
+
+    var best = null, bestCost = 1e9;
+    for(var i=0;i<list.length;i++){
+      var cost = voicingCost(list[i], prev, center);
+      if(cost < bestCost){ bestCost = cost; best = list[i]; }
+    }
+    VOICE.last = best.slice(); VOICE.inst = inst;
+    return best.slice();
+  }
+
+  /* The bass plays the ROOT of the chord, in the bass's own recorded range, near the
+     middle of it — not "whatever the chord's lowest note was, minus an octave", which is
+     how the old engine ended up asking a bass sample for notes it never had. */
+  function bassNote(rootMidi, inst){
+    var m = manifestOf("bass");
+    var lo = (m && m.lo ? m.lo : 28) + 1, hi = (m && m.hi ? m.hi : 55);
+    hi = Math.min(hi, 52);
+    var pc = ((rootMidi % 12) + 12) % 12;
+    var n = pc + 12*Math.round((40 - pc)/12);
+    while(n < lo) n += 12;
+    while(n > hi) n -= 12;
+    return n;
+  }
+
+  /* Nearest RECORDED note that has actually finished decoding. Checking the buffer (not
+     just the manifest) is what makes the fallback seamless: a set that is half-loaded
+     plays the notes it has and synthesises the rest, instead of dropping them. */
+  function nearestNote(inst, midi){
+    var m = manifestOf(inst);
+    var set = SMP.buf[inst];
+    if(!m || !set) return null;
+    var best = null, bd = 1e9;
+    for(var i=0;i<m.notes.length;i++){
+      var n = m.notes[i];
+      if(!set[n]) continue;
+      var d = Math.abs(n-midi);
+      if(d < bd){ bd = d; best = n; }
+    }
+    return best;
+  }
+
+  /* Which recorded velocity layer a note of loudness `vel` uses: 0 is the softest, L-1
+     the loudest (the main recording). The app plays between ~0.45 (a light up-stroke) and
+     ~1.05 (the downbeat of the loop), so that span is what gets divided between layers. */
+  function layerFor(inst, vel){
+    var m = manifestOf(inst), L = (m && m.layers) || 1;
+    if(L < 2) return L-1;
+    var x = (vel - 0.5) / 0.45;
+    x = x < 0 ? 0 : (x > 0.999 ? 0.999 : x);
+    return Math.floor(x * L);
+  }
+
+  function playSampled(inst, midi, t, dur, vel, pan, string){
+    var n = nearestNote(inst, midi);
+    if(n === null) return false;
+    var buf = SMP.buf[inst][n];
+    var c = chr(inst);
+    /* A soft note is a soft RECORDING: darker, with a rounder attack — not the loud one
+       turned down. Each layer is levelled between its own loudest take and the main set's
+       (the geometric mean), which keeps about half of the recorded difference in level:
+       enough that soft still sounds soft, not so much that the quietest marimba layer
+       (25 dB down at source) disappears under the bass. */
+    var lay = layerFor(inst, vel), lg = layerGroup(inst, lay), layered = false;
+    var top = (manifestOf(inst) || {}).layers || 1;
+    if(lay < top-1 && SMP.buf[lg] && SMP.buf[lg][n] && SMP.peak[lg] && SMP.peak[inst]){
+      buf = SMP.buf[lg][n]; layered = true;
+    }
+
+    var src = AC.createBufferSource(); src.buffer = buf;
+    /* Three things ride on playbackRate, because it is the one pitch control every engine
+       supports (AudioBufferSourceNode.detune is not universal on older WebKit):
+         1. the shift from the note that was RECORDED to the note being played;
+         2. the recording's own tuning error, measured at build time and written into the
+            manifest (scripts/tuning.mjs) — small, but a piano whose top octave is 10 cents
+            flat against an in-tune bass is exactly the kind of wrongness nobody can name;
+         3. a few cents of human drift, below "out of tune" and above "sampled robot". */
+    var mf = manifestOf(inst);
+    var cents = ((mf && mf.tune && mf.tune[n]) || 0) + (Math.random()*2-1)*4;
+    src.playbackRate.value = Math.pow(2, (midi-n)/12) * Math.pow(2, cents/1200);
+
+    // A real instrument gets BRIGHTER the harder it is played. Scaling gain alone sounds
+    // like someone turned the volume down, not like a softer touch.
+    var tone = AC.createBiquadFilter();
+    tone.type = "lowpass"; tone.Q.value = 0.2;
+    // With layers the recording already carries the change in tone, so the filter only
+    // shades between layers instead of doing all the work.
+    tone.frequency.value = top > 1 ? 3200 + 13800*Math.pow(vel, 1.6)
+                                   : 1400 + 15000*Math.pow(vel, 1.6);
+
+    var g = AC.createGain();
+    src.connect(tone); tone.connect(g);
+
+    var sustained = isSustained(inst);
+    var atk = sustained ? 0.06 : 0.004;
+    var rel = c.rel;
+    /* gain = target / loudest-in-group. The buffer supplies its own amplitude, so this
+       note lands at target * (its peak / the group's peak) — level fixed, register
+       balance intact. */
+    var scale = layered ? c.peak / Math.sqrt(SMP.peak[inst] * SMP.peak[lg]) : groupScale(inst, c.peak);
+    var pk  = Math.max(scale * vel, 0.0002);
+    var end = t + Math.max(dur, atk+0.02);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(pk, t+atk);
+    g.gain.setValueAtTime(pk, end);
+    g.gain.exponentialRampToValueAtTime(0.0001, end+rel);
+
+    if(sustained){
+      /* Loop the middle of the recording to hold the chord. loopEnd stops SHORT of the
+         encoder's fade-out — looping across the fade is an audible pulsing swell, which
+         is the sort of detail that reads as "cheap" without anyone being able to say why. */
+      var L = buf.duration, fade = (manifestOf(inst) || {}).fade || 0.18;
+      var lend = Math.max(L*0.55, L - fade - 0.04);
+      src.loop = true; src.loopStart = Math.min(L*0.35, lend-0.15); src.loopEnd = lend;
+    }
+    out(g, c.verb, pan || 0);
+    src.start(t); src.stop(end+rel+0.05);
+    if(string !== undefined && string !== null) choke(inst, string, t, g, src, end);
+    return true;
+  }
+
+  /* ONE STRING, ONE NOTE. A guitar string that is struck again stops ringing what it was
+     playing — the new note replaces it, it does not stack on top. Without this every strum
+     piled six more notes onto the six still ringing, which is the smeared, organ-like wash
+     that gives a sampled guitar away. The previous note on the same string is damped over
+     ~15 ms from the instant the new one starts (a pick does not cut a string dead).
+     Kept per audio context, so an export and the live loop never damp each other. */
+  function choke(inst, string, t, g, src, end){
+    var map = AC.__choke || (AC.__choke = {});
+    var key = inst + ":" + string, prev = map[key];
+    /* Only a note still SUSTAINING is damped. One already in its release is fading by
+       itself, and cancelling that fade would snap it back up to full level for an
+       instant — a click on every repeated string. */
+    if(prev && prev.t < t && t < prev.end){
+      try{
+        prev.g.gain.cancelScheduledValues(t);
+        prev.g.gain.setTargetAtTime(0.0001, t, 0.015);
+        prev.src.stop(t + 0.12);
+      }catch(e){ /* already stopped: nothing to damp */ }
+    }
+    map[key] = { t: t, g: g, src: src, end: end };
+  }
+
+  function playDrumSample(id, t, vel){
+    var group = "drum:"+id;
+    var d = SMP.manifest && SMP.manifest.drums[id];
+    var set = SMP.buf[group];
+    if(!d || !set) return false;
+
+    var vi = Math.min(d.layers.length-1, Math.max(0, Math.round(vel*(d.layers.length-1))));
+    // Round-robin: alternating takes is what stops a repeated hit sounding like a
+    // machine gun. Same hit, different performance.
+    SMP.rr[group+vi] = ((SMP.rr[group+vi]||0) + 1) % d.layers[vi].length;
+    var buf = set[vi+"-"+SMP.rr[group+vi]];
+    if(!buf){                                   // that exact take hasn't decoded yet
+      for(var i=0;i<d.layers.length && !buf;i++)
+        for(var j=0;j<d.layers[i].length && !buf;j++) buf = set[i+"-"+j];
+      if(!buf) return false;
+    }
+    var src = AC.createBufferSource(); src.buffer = buf;
+    /* The velocity LAYER already carries the dynamics — a hard snare take is a different
+       recording, not the same one turned up. Scaling by velocity again on top would
+       double-count it and bury the soft hits, so this is only a light touch. */
+    var g = AC.createGain();
+    g.gain.value = groupScale(group, DRUM_PEAK[id] || 0.4) * (0.85 + 0.15*vel);
+    src.connect(g); out(g, id==="hat" ? 0.10 : 0.16, id==="hat" ? 0.18 : 0);
+    src.start(t);
+    return true;
+  }
+
+  /* The three entry points the sequencer uses. Sample first, synth if it isn't there.
+     Every fallback is counted and the first few are logged with the reason — a synthesised
+     note is never silent about being synthesised again. */
+  function fellBack(what){
+    SMP.fellBack++;
+    if(SMP.fellBack <= 5 || SMP.fellBack % 200 === 0){
+      logLoud("SYNTH FALLBACK (" + SMP.fellBack + "x) on " + what +
+        " — manifest:" + (SMP.manifest ? "ok" : "MISSING") +
+        " loaded:" + SMP.stats.loaded + "/" + SMP.stats.expected +
+        " failed:" + SMP.stats.failed);
+    }
+  }
+  /* Humanised timing subtracts a few milliseconds from the beat, which is silently fine
+     on the live transport (its clock is always well past zero) and throws on an
+     OfflineAudioContext, whose timeline STARTS at zero. Clamped once, here, at the three
+     entry points every scheduled note goes through. */
+  function playNote(inst, midi, t, dur, vel, pan, string){
+    t += drift("keys", t); t = t < 0 ? 0 : t;
+    if(isSynthVoice(inst)){ (VOICES[inst] || voicePiano)(midiToFreq(midi), t, dur, vel, pan); return; }
+    if(playSampled(inst, midi, t, dur, vel, pan, string)) return;
+    fellBack(inst + " note " + midi);
+    (VOICES[inst] || voicePiano)(midiToFreq(midi), t, dur, vel);
+  }
+  function playBassNote(midi, t, dur, vel){
+    t += drift("bass", t); t = t < 0 ? 0 : t;
+    if(playSampled("bass", midi, t, dur, vel, 0)) return;
+    fellBack("bass note " + midi);
+    voiceBass(midiToFreq(midi), t, dur, vel);
+  }
+  function playDrum(id, t, vel){
+    t += drift("drums", t); t = t < 0 ? 0 : t;
+    if(playDrumSample(id, t, vel)) return;
+    fellBack("drum " + id);
+    (id==="kick" ? drumKick : id==="snare" ? drumSnare : drumHat)(t, vel);
+  }
+
+  /* Mirrors ChordLoopIAP.diagnose(): answers "is it actually playing recordings, and at
+     what level?" from a console on a real device, where you can't attach a profiler.
+     `sampled:false` on a set means every note from it is coming out of the oscillator
+     fallback — audible as the old synthetic tone. */
+  window.ChordLoopAudio = {
+    /* Voicing, exposed so it can be asserted against — by tests/voicing.test.mjs, and by
+       hand in Safari's inspector on the device. The voicer is the difference between a
+       progression sounding like music and sounding like a column of stacked thirds, so
+       it is worth being able to look at it directly. */
+    voice: function(tones, inst){ return voiceChord(tones, inst || state.instrument); },
+    bass: function(root, inst){ return bassNote(root, inst || state.instrument); },
+    range: function(inst){ return instRange(inst || state.instrument); },
+    resetVoicing: function(){ VOICE.last = null; VOICE.inst = null; },
+    /* The export renderer, reachable for inspection and for tests/render harnesses. */
+    renderWav: function(opts){ return renderProgressionToWav(opts); },
+    fallbacks: function(){ return SMP.fellBack; },
+    session: function(){ return { native: nativeSession(),
+                                  keepAlive: KeepAlive.active, held: KeepAlive.held,
+                                  keepAliveError: KeepAlive.error,
+                                  context: AC ? AC.state : "not-started" }; },
+    diagnose: function(){
+      var r = { manifest: !!SMP.manifest, context: AC ? AC.state : "not-started", sets: {},
+              room: LIVE ? LIVE.room : "not-started" };
+      if(!SMP.manifest) return r;
+      Object.keys(SMP.manifest.instruments).forEach(function(id){
+        var loaded = Object.keys(SMP.buf[id] || {}).length;
+        var L = SMP.manifest.instruments[id].layers || 1, lay = [];
+        for(var k=0;k<L-1;k++) lay.push(Object.keys(SMP.buf[layerGroup(id,k)] || {}).length);
+        r.sets[id] = { loaded: loaded, of: SMP.manifest.instruments[id].notes.length,
+          layers: L, softLayersLoaded: lay,
+          sampled: loaded > 0, peak: +(SMP.peak[id] || 0).toFixed(4),
+          gain: +groupScale(id, SMP_PEAK[id] || 0.38).toFixed(3),
+          target: SMP_PEAK[id] || 0.38 };
+      });
+      Object.keys(SMP.manifest.drums).forEach(function(id){
+        var g = "drum:"+id, loaded = Object.keys(SMP.buf[g] || {}).length;
+        r.sets[g] = { loaded: loaded, sampled: loaded > 0,
+          peak: +(SMP.peak[g] || 0).toFixed(4),
+          gain: +groupScale(g, DRUM_PEAK[id] || 0.4).toFixed(3),
+          target: DRUM_PEAK[id] || 0.4 };
+      });
+      return r;
+    }
+  };
+
+  function voicePiano(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=4600; lp.Q.value=0.5;
+    var o1=osc("triangle",freq,0), o2=osc("sine",freq*2,0), o2g=AC.createGain(); o2g.gain.value=0.22;
+    o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g);
+    var pk=0.5*vel;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur*0.85+0.4);
+    out(g,0.4); var st=t+dur+0.6; o1.start(t); o2.start(t); o1.stop(st); o2.stop(st);
+  }
+  function voiceRhodes(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var car=osc("sine",freq,0), mod=osc("sine",freq*2,0), mg=AC.createGain();
+    mg.gain.setValueAtTime(freq*3.2,t); mg.gain.exponentialRampToValueAtTime(freq*0.35,t+0.5);
+    mod.connect(mg); mg.connect(car.frequency); car.connect(g);
+    var lfo=osc("sine",5.2,0), lg=AC.createGain(); lg.gain.value=0.05; lfo.connect(lg); lg.connect(g.gain);
+    var pk=0.42*vel;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.01);
+    g.gain.exponentialRampToValueAtTime(pk*0.55,t+0.5);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.9+0.35);
+    out(g,0.35); var st=t+dur+0.5; car.start(t); mod.start(t); lfo.start(t); car.stop(st); mod.stop(st); lfo.stop(st);
+  }
+  /* WARM PAD — synthesised on purpose (see SYNTH_INSTS). What separates a pad that sounds
+     like an instrument from one that sounds like a test tone is movement: nothing about it
+     may be static for the length of a chord.
+       - SIX detuned saws in two groups panned hard-ish left and right. One detuned pair
+         beats at a fixed rate and sounds electronic; six voices at unequal detunings beat
+         against each other irregularly, which is what "wide" actually is.
+       - The filter opens over most of a second and then drifts under a slow LFO, so the
+         timbre is still changing when the chord changes.
+       - A long release that OVERLAPS the next chord. A pad that stops at the barline is
+         the single most synthetic thing a pad can do. */
+  function voicePad(freq,t,dur,vel,pan){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var end=t+dur+2.2;
+
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.Q.value=1.1;
+    lp.frequency.setValueAtTime(Math.max(220,freq*1.2),t);
+    lp.frequency.linearRampToValueAtTime(Math.min(5200,freq*7+900),t+0.9);
+    lp.frequency.linearRampToValueAtTime(Math.min(3600,freq*5+600),end);
+    // slow filter drift — the pad keeps breathing for as long as it is held
+    var lfo=osc("sine",0.13+Math.random()*0.07,0), lg=AC.createGain(); lg.gain.value=freq*0.9;
+    lfo.connect(lg); lg.connect(lp.frequency); lfo.start(t); lfo.stop(end);
+
+    [[-14,-0.55],[-7,-0.3],[-2,-0.1],[3,0.12],[9,0.34],[15,0.6]].forEach(function(v){
+      var o=osc("sawtooth",freq,v[0]), og=AC.createGain(); og.gain.value=0.115;
+      o.connect(og);
+      if(AC.createStereoPanner){ var pp=AC.createStereoPanner(); pp.pan.value=v[1]; og.connect(pp); pp.connect(lp); }
+      else og.connect(lp);
+      o.start(t); o.stop(end);
+    });
+    // a sine an octave down gives the chord a floor without muddying the saws
+    var sub=osc("sine",freq/2,0), sg=AC.createGain(); sg.gain.value=0.14;
+    sub.connect(sg); sg.connect(lp); sub.start(t); sub.stop(end);
+
+    lp.connect(g);
+    var pk=0.30*vel;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(pk,t+0.55);                 // slow, like a bow
+    g.gain.setValueAtTime(pk,t+dur*0.9);
+    g.gain.exponentialRampToValueAtTime(0.0001,end);           // rings into the next chord
+    out(g,0.58,pan||0);
+  }
+  function voiceOrgan(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    [[1,0.4],[2,0.26],[3,0.15],[4,0.1]].forEach(function(h){ var o=osc("sine",freq*h[0],0), og=AC.createGain(); og.gain.value=h[1]; o.connect(og); og.connect(g); o.start(t); o.stop(t+dur+0.3); });
+    var pk=0.5*vel;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.02);
+    g.gain.setValueAtTime(pk,t+dur*0.9); g.gain.exponentialRampToValueAtTime(0.0001,t+dur+0.25);
+    out(g,0.3);
+  }
+  function voiceGuitar(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.Q.value=0.6;
+    lp.frequency.setValueAtTime(3600,t); lp.frequency.exponentialRampToValueAtTime(800,t+0.6);
+    var o1=osc("sawtooth",freq,0), o2=osc("triangle",freq,0), o2g=AC.createGain(); o2g.gain.value=0.6;
+    o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g);
+    var pk=0.5*vel, len=Math.min(dur,1.8);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+len+0.25);
+    out(g,0.35); var st=t+len+0.4; o1.start(t); o2.start(t); o1.stop(st); o2.stop(st);
+  }
+  /* SYNTH — also synthesised on purpose. A classic subtractive voice: detuned saws into a
+     resonant lowpass with its OWN envelope, snappier than the amplitude envelope. The
+     filter envelope is the sound; harder-played notes open it further, which is how a
+     real synth responds and what makes a line played on it phrase instead of just sound. */
+  function voiceSynth(freq,t,dur,vel,pan){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var end=t+dur+0.5;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.Q.value=5.5;
+    var peakHz=Math.min(7000, freq*(5+7*vel)+700), restHz=Math.max(freq*1.4, 420);
+    lp.frequency.setValueAtTime(restHz,t);
+    lp.frequency.linearRampToValueAtTime(peakHz,t+0.045);          // the "pluck"
+    lp.frequency.exponentialRampToValueAtTime(Math.max(restHz,freq*2.2),t+Math.min(dur*0.7,0.9));
+
+    [[-9,-0.28],[0,0],[8,0.28]].forEach(function(v){
+      var o=osc("sawtooth",freq,v[0]), og=AC.createGain(); og.gain.value=0.2;
+      o.connect(og);
+      if(AC.createStereoPanner){ var pp=AC.createStereoPanner(); pp.pan.value=v[1]; og.connect(pp); pp.connect(lp); }
+      else og.connect(lp);
+      o.start(t); o.stop(end);
+    });
+    var sq=osc("square",freq/2,0), sqg=AC.createGain(); sqg.gain.value=0.16;
+    sq.connect(sqg); sqg.connect(lp); sq.start(t); sq.stop(end);
+
+    lp.connect(g);
+    var pk=0.30*vel;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(pk,t+0.012);
+    g.gain.exponentialRampToValueAtTime(pk*0.72,t+0.25);           // a little decay to a sustain
+    g.gain.setValueAtTime(pk*0.72,t+dur*0.85);
+    g.gain.exponentialRampToValueAtTime(0.0001,end);
+    out(g,0.32,pan||0);
+  }
+  function voiceStrings(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=3200; lp.Q.value=0.4;
+    [-7,-2,4,9].forEach(function(c){ var o=osc("sawtooth",freq,c), og=AC.createGain(); og.gain.value=0.11;
+      var vib=osc("sine",5.5,0), vg=AC.createGain(); vg.gain.value=4; vib.connect(vg); vg.connect(o.detune); vib.start(t); vib.stop(t+dur+0.9);
+      o.connect(og); og.connect(lp); o.start(t); o.stop(t+dur+0.9); });
+    lp.connect(g);
+    var pk=0.34*vel;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(pk,t+0.22);
+    g.gain.setValueAtTime(pk,t+dur*0.8); g.gain.exponentialRampToValueAtTime(0.0001,t+dur+0.7);
+    out(g,0.5);
+  }
+  function voiceVibes(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var o1=osc("sine",freq,0), o2=osc("sine",freq*4,0), o2g=AC.createGain(); o2g.gain.value=0.13;
+    o1.connect(g); o2.connect(o2g); o2g.connect(g);
+    var pk=0.5*vel, len=Math.min(dur,1.5);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+len+0.3);
+    out(g,0.5); var st=t+len+0.5; o1.start(t); o2.start(t); o1.stop(st); o2.stop(st);
+  }
+  function voiceMarimba(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2600;
+    var o1=osc("sine",freq,0), o2=osc("sine",freq*4,0), o2g=AC.createGain(); o2g.gain.value=0.2;
+    o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g);
+    var pk=0.52*vel, len=Math.min(dur,0.9);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+len+0.2);
+    out(g,0.32); var st=t+len+0.35; o1.start(t); o2.start(t); o1.stop(st); o2.stop(st);
+  }
+  var VOICES = { piano:voicePiano, rhodes:voiceRhodes, pad:voicePad, organ:voiceOrgan, guitar:voiceGuitar,
+    synth:voiceSynth, strings:voiceStrings, vibes:voiceVibes, marimba:voiceMarimba };
+
+  function voiceBass(freq,t,dur,vel){ vel=vel||1;
+    var g=AC.createGain(); g.gain.value=0.0001;
+    var o=osc("triangle",freq,0), o2=osc("sine",freq,0), o2g=AC.createGain(); o2g.gain.value=0.7;
+    var lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=480;
+    o.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g);
+    var pk=0.5*vel;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur+0.12);
+    out(g,0.12); var st=t+dur+0.2; o.start(t); o2.start(t); o.stop(st); o2.stop(st);
+  }
+
+  /* drums */
+  function drumKick(t,vel){ vel=vel||1; var o=osc("sine",150,0), g=AC.createGain();
+    o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(48,t+0.12);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.9*vel,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.34); }
+  function drumSnare(t,vel){ vel=vel||1;
+    var n=AC.createBufferSource(); n.buffer=noiseBuf(); var hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=1500; var g=AC.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.45*vel,t+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
+    n.connect(hp); hp.connect(g); g.connect(master);
+    var o=osc("triangle",180,0), og=AC.createGain(); og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.22*vel,t+0.004); og.gain.exponentialRampToValueAtTime(0.0001,t+0.12); o.connect(og); og.connect(master);
+    n.start(t); n.stop(t+0.25); o.start(t); o.stop(t+0.16); }
+  function drumHat(t,vel){ vel=vel||1; var n=AC.createBufferSource(); n.buffer=noiseBuf(); var hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=8000; var g=AC.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.16*vel,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.055);
+    n.connect(hp); hp.connect(g); g.connect(master); n.start(t); n.stop(t+0.08); }
+  /* ---------------- the groove ----------------
+     Small deviations are what make a pattern sound played rather than triggered. Every
+     onset and velocity below is nudged by a few milliseconds / a few percent. It is
+     deliberately tiny: enough that two bars are never bit-identical, far too little to
+     read as sloppy. */
+  function hum(amount){ return (Math.random()*2-1)*amount; }
+
+  /* TIME FEEL. Independent random jitter on every note is not how people play: it is
+     noise, and the ear hears it as noise. A player drifts — sits a few milliseconds behind
+     the beat for a while, then pushes ahead — and each player in a band drifts on their
+     own. drift() is that: a smooth curve per part (three slow sine waves with random
+     phases, periods 1.7-5.3 s), sampled at the note's own time, so neighbouring notes
+     move together and the chords, bass and drums lean against each other the way a
+     rhythm section does. The per-note jitter left in the callers is half what it was,
+     kept only as texture. The curve is per audio context: an export gets a fresh feel,
+     but one that is just as continuous as the live loop's. */
+  var DRIFT_AMP = { keys: 0.006, bass: 0.004, drums: 0.003 };
+  function drift(part, t){
+    var d = AC.__drift || (AC.__drift = {});
+    var ph = d[part] || (d[part] = [Math.random()*6.283, Math.random()*6.283, Math.random()*6.283]);
+    var a = DRIFT_AMP[part] || 0;
+    return a * (0.5*Math.sin(6.283*t/5.3 + ph[0]) + 0.3*Math.sin(6.283*t/2.9 + ph[1])
+              + 0.2*Math.sin(6.283*t/1.7 + ph[2]));
+  }
+
+  /* Chords are wide, not a point source: the low voice sits a little left, the top a
+     little right, the way a player in front of you does. */
+  function panFor(i, n, spread){ return n<2 ? 0 : ((i/(n-1))-0.5)*2*(spread||0); }
+
+  function playDrums(t, barLen){
+    if(state.drums==="off") return;
+    var beat=barLen/4, sw=beat*0.05;           // a hint of swing on the off-beats
+    for(var e=0;e<8;e++){
+      var off=(e%2 ? sw : 0) + hum(0.003);
+      playDrum("hat", t+e*(beat/2)+off, (e%2===0?0.88:0.58)+hum(0.08));
+    }
+    if(state.drums==="backbeat"){
+      playDrum("kick",t+hum(0.002),1); playDrum("kick",t+beat*2+hum(0.003),0.88);
+      playDrum("snare",t+beat+hum(0.0025),0.9); playDrum("snare",t+beat*3+hum(0.0025),0.95);
+    } else if(state.drums==="driving"){
+      for(var b=0;b<4;b++) playDrum("kick", t+b*beat+hum(0.0025), b===0?1:0.78+hum(0.06));
+      playDrum("snare",t+beat+hum(0.0025),0.9); playDrum("snare",t+beat*3+hum(0.0025),0.95);
+    }
+  }
+
+  /* single-chord preview (tapping) — same voicing engine the loop uses, so a chord sounds
+     the same whether you tap it or play it, and tapping through the palette already sounds
+     like a progression rather than a row of stacks. */
+  function playChord(notes, dur){
+    var ac=audio(); if(ac.state==="suspended") ac.resume();
+    holdForChord((dur||1.7) + 2);
+    var inst=state.instrument, ch=chr(inst);
+    var t0=ac.currentTime+0.03; dur=dur||1.7;
+    var v=voiceChord(notes, inst);
+    /* On a guitar a tapped chord is one quick down-stroke across the shape (~6 ms a
+       string), not the slow roll a keyboard's `strum` value describes. */
+    var guitar = isGuitar(inst) && GUITAR.strings && GUITAR.strings.length === v.length;
+    var gap = guitar ? 0.006 : ch.strum, lvl = v.length > 4 ? Math.sqrt(4 / v.length) : 1;
+    for(var i=0;i<v.length;i++){
+      playNote(inst, v[i], t0+i*gap+hum(0.002), dur, (0.9+hum(0.05))*lvl,
+               panFor(i, v.length, ch.spread), guitar ? GUITAR.strings[i] : null);
+    }
+    playBassNote(bassNote(notes[0], inst), t0, Math.min(dur,1.4), 0.85);
+  }
+
+  /* one bar of the groove */
+  function arpOrder(n){ var a=[]; for(var i=0;i<n;i++)a.push(i); for(var j=n-2;j>=1;j--)a.push(j); return a; }
+  function arpUpOrder(n){ var a=[]; for(var i=0;i<n;i++)a.push(i); return a; }
+  function arpDownOrder(n){ var a=[]; for(var i=n-1;i>=0;i--)a.push(i); return a; }
+  /* Alberti: low, high, middle, high. The oldest accompaniment figure there is, and the
+     one thing in this list that is a PATTERN rather than a sweep — which is what makes it
+     worth having next to three arpeggios. */
+  function patternOrder(n){
+    if(n<2) return [0];
+    if(n<3) return [0, n-1];
+    var mid = Math.max(1, Math.min(n-2, n>>1));
+    return [0, n-1, mid, n-1]; }
+  /* The fifth above the bass root, folded down when the sampled bass does not reach it. */
+  function fifthAbove(root){ var f=root+7, m=manifestOf("bass"); if(m && f>m.hi) f=root-5; return f; }
+
+  /* PHRASE SHAPE. Every bar being exactly as loud as every other bar is one of the things
+     that reads as "a machine is playing this". A player leans into the middle of a phrase
+     and settles at the end of it, and hits the top of the loop hardest. `idx` is the bar
+     number and `n` the length of the progression, so the arc repeats WITH the loop instead
+     of drifting out of phase with it. */
+  function phraseArc(idx, n){
+    if(!n) return 1;
+    var pos = ((idx % n) + n) % n;
+    var arc = 0.90 + 0.12*Math.sin(Math.PI * (pos/n));
+    if(pos === 0) arc *= 1.05;                    // the downbeat of the loop
+    return arc;
+  }
+
+  /* The bass line. It used to be two identical root half-notes under every bar of every
+     instrument, which is most of why the app sounded programmed — and it played under a
+     solo harp whether you wanted it or not. Now it can be turned off, and what it plays
+     follows the feel. */
+  function playBassLine(c, t, barLen, amp, feel){
+    if(state.bass === "off") return;
+    feel = isFeel(feel) ? feel : state.feel;
+    var beat = barLen/4;
+    var root = bassNote(c.notes[0], state.instrument);
+    if(feel === "block"){
+      // one long note under a held chord — a bass player would not restate it
+      playBassNote(root, t+hum(0.002), barLen*0.94, 1.0*amp);
+    } else if(feel === "strum"){
+      playBassNote(root, t+hum(0.002), beat*1.9, 1.0*amp);
+      playBassNote(root, t+beat*2+hum(0.0025), beat*1.9, 0.82*amp);
+    } else if(feel === "pattern"){
+      /* The figure the Alberti pattern sits on: root on 1, a push on the "and" of 2, the
+         fifth on 3. Straight, and busier than the others on purpose. */
+      playBassNote(root, t+hum(0.002), beat*1.35, 1.0*amp);
+      playBassNote(root, t+beat*1.5+hum(0.0025), beat*0.85, 0.7*amp);
+      playBassNote(fifthAbove(root), t+beat*3+hum(0.0025), beat*0.9, 0.8*amp);
+    } else {
+      /* Under an arpeggio, root then the fifth above it — the oldest bass line there is,
+         and it stops the low end sitting on one note for the whole bar. */
+      playBassNote(root, t+hum(0.002), beat*1.9, 1.0*amp);
+      playBassNote(fifthAbove(root), t+beat*2+hum(0.0025), beat*1.9, 0.78*amp);
+    }
+  }
+
+  /* ONE bar of ONE chord. `feel` is the step's own play style; it falls back to the loop's
+     when a step has none, which is what makes per-chord styles a parameter rather than a
+     second engine. The live transport, the tap preview and the offline WAV render all come
+     through here, so a style can never sound one way live and another in the export. */
+  function playBar(c, t, barLen, idx, nBars, feel){
+    feel = isFeel(feel) ? feel : state.feel;
+    var beat=barLen/4, inst=state.instrument, ch=chr(inst);
+    var amp=phraseArc(idx||0, nBars||0);
+    var v=voiceChord(c.notes, inst);
+    /* A guitar shape knows which string each note is on (see guitarShape): passed to
+       playNote so a re-struck string damps what it was ringing. Keyboards hold notes. */
+    var strs = (isGuitar(inst) && GUITAR.strings && GUITAR.strings.length === v.length) ? GUITAR.strings : null;
+    var sid = function(i){ return strs ? strs[i] : null; };
+    /* Six strings are louder than a three-note keyboard voicing; keep a chord the same
+       loudness however many notes it has (energy, not amplitude, adds up). */
+    amp *= v.length > 4 ? Math.sqrt(4 / v.length) : 1;
+    playBassLine(c, t, barLen, amp, feel);
+
+    if(feel==="block"){
+      // Held to the end of the bar and left to ring into the next one, which is what a
+      // pianist's foot does and what the old hard cut-off at the barline never did.
+      for(var i=0;i<v.length;i++)
+        playNote(inst, v[i], t+i*Math.max(ch.strum,0.006)+hum(0.002), barLen*0.98,
+                 ((i===v.length-1?0.86:0.78)+hum(0.05))*amp, panFor(i, v.length, ch.spread), sid(i));
+    } else if(feel==="strum"){
+      /* The strum every guitarist learns first: DOWN, down-UP, up-DOWN-UP, on the eighth
+         notes 1, 2, 2&, 3&, 4, 4& — the hand keeps moving through the gaps and only touches
+         the strings on those six. What makes it a hand and not a trigger:
+           - a down-stroke crosses every string, low to high; an UP-stroke catches only the
+             top three or four, high to low, and lands lighter;
+           - harder strokes are faster: the pick crosses the strings in ~25 ms on an accent
+             and ~45 ms on a light one;
+           - the strings left ringing are damped only when struck again (choke() above),
+             so the bass strings ring under the up-strokes the way they do on a guitar. */
+      var EIGHTH = beat/2;
+      var STROKES = [ { at:0, down:true,  amp:0.96 }, { at:2, down:true,  amp:0.80 },
+                      { at:3, down:false, amp:0.62 }, { at:5, down:false, amp:0.60 },
+                      { at:6, down:true,  amp:0.82 }, { at:7, down:false, amp:0.64 } ];
+      var upCount = Math.max(2, Math.min(v.length, Math.ceil(v.length*0.6)));
+      for(var b=0;b<STROKES.length;b++){
+        var st=STROKES[b], bt=t+st.at*EIGHTH+(st.at%2?EIGHTH*0.06:0)+hum(0.003);
+        var sAmp=st.amp+hum(0.05);
+        var gap=(0.0105 - 0.0055*sAmp) * (st.down?1:0.8);       // ~4.5-6 ms per string
+        var idxs=[];
+        if(st.down){ for(var k=0;k<v.length;k++) idxs.push(k); }
+        else       { for(var k2=v.length-1;k2>=v.length-upCount;k2--) idxs.push(k2); }
+        for(var j=0;j<idxs.length;j++){
+          var vi=idxs[j];
+          /* The note rings until its string is struck again; on a keyboard (no strings)
+             it is held for about a beat and a half, as before. */
+          var ring = strs ? barLen : beat*1.6;
+          playNote(inst, v[vi], bt+j*gap+hum(0.001), ring, (sAmp*(st.down?1:0.9))*amp,
+                   panFor(vi, v.length, ch.spread), sid(vi));
+        }
+      }
+    } else if(feel==="pattern"){
+      /* A repeating figure rather than a run: the bottom voice on every beat with the top
+         and the middle answering it off the beat. Deliberately STRAIGHT — no swing — since
+         it is the contrast with the arpeggios that makes both of them worth having. */
+      var pord=patternOrder(v.length), psteps=8, pstep=barLen/psteps;
+      for(var q=0;q<psteps;q++){
+        var qi=pord[q%pord.length], low=(qi===pord[0]);
+        playNote(inst, v[qi], t+q*pstep+hum(0.002), low?beat*0.95:pstep*1.7,
+                 ((q%4===0?0.92:(low?0.78:0.62))+hum(0.05))*amp, panFor(qi, v.length, ch.spread), sid(qi));
+      }
+    } else {
+      /* Arpeggio: through the voicing, leaning on the first note of each beat, and reaching
+         an octave above the bottom voice at the top of the phrase — if the instrument was
+         actually recorded that high. `arp` runs up and back down; `arpup` climbs and
+         `arpdown` falls, which is what a turnaround wants. */
+      var order = feel==="arpup"   ? arpUpOrder(v.length)
+                : feel==="arpdown" ? arpDownOrder(v.length)
+                :                    arpOrder(v.length);
+      var steps=8, stepLen=barLen/steps, hi=instRange(inst).hi;
+      /* A LITTLE SWING. Eighth notes exactly on the grid are the sound of a sequencer;
+         pushing the off-beats back by ~7% is what a player does without meaning to. */
+      var swing = stepLen*0.07;
+      for(var s=0;s<steps;s++){
+        var oi=order[s%order.length], note=v[oi];
+        /* The octave lift tops the phrase off — but on a falling arpeggio it would land an
+           octave UP on the last note, which is the one thing that shape must not do. */
+        if(feel!=="arpdown" && s===order.length-1 && v.length>2 && v[0]+12<=hi) note=v[0]+12;
+        // The octave lift is a note no string of the shape is holding: it rings free.
+        playNote(inst, note, t+s*stepLen+(s%2?swing:0)+hum(0.0025), stepLen*2.1,
+                 (((s%2===0)?0.86:0.66)+hum(0.06))*amp, panFor(oi, v.length, ch.spread),
+                 note === v[oi] ? sid(oi) : null);
+      }
+    }
+  }
+  function haptic(){ if(navigator.vibrate){ try{navigator.vibrate(8);}catch(e){} } }
+
+  /* ---------------- theory ---------------- */
+  /* Pure: the chords of a key, independent of what the app is currently showing. Export
+     needs this — a saved idea carries its own key and must render in it. */
+  function chordsFor(root, mode, sevenths){
+    var steps = MODES[mode].steps, roman = MODES[mode].roman, base = 48 + root, scaleMidi = [];
+    for(var oct=0; oct<3; oct++){ for(var s=0; s<steps.length; s++){ scaleMidi.push(base + oct*12 + steps[s]); } }
+    var chords = [];
+    for(var d=0; d<7; d++){
+      var tones = [ scaleMidi[d], scaleMidi[d+2], scaleMidi[d+4] ];
+      var third = tones[1]-tones[0], fifth = tones[2]-tones[0], suffix = "";
+      if(third===3 && fifth===7){ suffix="m"; } else if(third===3 && fifth===6){ suffix="dim"; }
+      if(sevenths){
+        var sev = scaleMidi[d+6]; tones.push(sev); var seventh = sev - tones[0];
+        if(third===4){ suffix = (seventh===11) ? "maj7" : "7"; }
+        else if(third===3 && fifth===7){ suffix = (seventh===11) ? "mMaj7" : "m7"; }
+        else if(third===3 && fifth===6){ suffix = (seventh===9) ? "dim7" : "m7♭5"; }
+      }
+      chords.push({ name:NOTE[tones[0]%12] + suffix, roman:roman[d], notes:tones });
+    }
+    return chords;
+  }
+  function buildChords(){ state.chords = chordsFor(state.root, state.mode, state.sevenths); }
+
+  /* ---------------- rendering ---------------- */
+  var $ = function(id){ return document.getElementById(id); };
+  function renderKeySelect(){ var sel=$("key"); sel.innerHTML="";
+    for(var i=0;i<12;i++){ var o=document.createElement("option"); o.value=i; o.textContent=NOTE[i]; if(i===state.root)o.selected=true; sel.appendChild(o); } }
+  /* Real <button>s, not divs with click handlers. Apple reviews on an iPad and a
+     div-as-button is the recurring Guideline 2.1(a) failure across this portfolio. */
+  function renderPalette(){ var wrap=$("palette"); wrap.innerHTML="";
+    state.chords.forEach(function(c, idx){ var el=document.createElement("button");
+      el.type="button"; el.className="chip";
+      el.setAttribute("aria-label", "Add " + c.name + " (" + c.roman + ")");
+      el.innerHTML='<span class="nm">'+c.name+'</span><span class="rn">'+c.roman+'</span>';
+      el.addEventListener("click", function(){ playChord(c.notes, 1.7); haptic();
+        el.classList.add("lit"); setTimeout(function(){el.classList.remove("lit");}, 260); addChord(idx); });
+      wrap.appendChild(el); }); }
+  function renderProg(){ var wrap=$("prog"); wrap.innerHTML="";
+    if(state.progression.length===0){ wrap.innerHTML='<span class="empty">Empty — tap chords above to add them.</span>'; return; }
+    state.progression.forEach(function(idx, pos){
+      var c=state.chords[idx];
+      var el=document.createElement("div"); el.className="pchip";
+
+      var row=document.createElement("div"); row.className="prow";
+      var nm=document.createElement("button"); nm.type="button"; nm.className="pnm";
+      nm.setAttribute("aria-label", "Step "+(pos+1)+", "+c.name+" — tap to hear it, drag to reorder");
+      var num=document.createElement("span"); num.className="pnum"; num.textContent=String(pos+1);
+      var nmt=document.createElement("span"); nmt.textContent=c.name;
+      nm.appendChild(num); nm.appendChild(nmt);
+
+      var x=document.createElement("button"); x.type="button"; x.className="x"; x.textContent="✕";
+      x.setAttribute("aria-label", "Remove "+c.name+" (step "+(pos+1)+")");
+      x.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+      x.addEventListener("click", function(e){ e.stopPropagation(); progRemove(pos); renderProg(); });
+      row.appendChild(nm); row.appendChild(x);
+
+      el.appendChild(row);
+      el.appendChild(styleButton(pos, c));
+      makeDraggable(el, nm, pos);
+      wrap.appendChild(el); }); }
+
+  /* The per-chord play-style control. It always shows the style the step will ACTUALLY
+     play — its own, or the loop's — so the progression can be read at a glance.
+
+     PRO, gated exactly the way MIDI export is: the control is real for everyone, wears the
+     same PRO badge every other locked control wears, and opens the paywall instead of the
+     picker. A free user sees the feature, never a dead button. Nothing here can grant the
+     entitlement; it only reads state.pro, which has one writer (see ENTITLEMENT below). */
+  function styleButton(pos, c){
+    var b=document.createElement("button"); b.type="button"; b.className="pstyle";
+    var own=state.progFeels[pos], f=FEELS[feelAt(pos)] || FEELS.arp;
+    if(isFeel(own)) b.classList.add("custom");
+    var g=document.createElement("span"); g.className="glyph"; g.textContent=f.glyph;
+    var t=document.createElement("span"); t.textContent=f.short;
+    b.appendChild(g); b.appendChild(t);
+    b.setAttribute("aria-label", "Play style for step "+(pos+1)+", "+c.name+": "+f.label+
+      (isFeel(own) ? "" : " (following the loop)") + (state.pro ? "" : " — Pro feature"));
+    tagBtn(b, !state.pro);
+    b.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+    b.addEventListener("click", function(e){ e.stopPropagation();
+      if(!state.pro){ openPaywall(); return; }
+      openFeelSheet(pos); });
+    return b; }
+
+  /* ---------------- the play-style sheet ---------------- */
+  var feelSheetPos = -1;
+  function openFeelSheet(pos){
+    if(!state.pro){ openPaywall(); return; }
+    var c = state.chords[state.progression[pos]]; if(!c) return;
+    feelSheetPos = pos;
+    $("fsSub").textContent = "Step " + (pos+1) + " · " + c.name;
+    renderFeelSheet();
+    $("feelSheet").classList.add("show"); }
+  function closeFeelSheet(){ feelSheetPos = -1;
+    var el = $("feelSheet"); if(el) el.classList.remove("show"); }
+  function renderFeelSheet(){
+    var pos=feelSheetPos; if(pos<0) return;
+    var list=$("fsList"); list.innerHTML="";
+    var own=state.progFeels[pos], loop=FEELS[state.feel] || FEELS.arp;
+    function opt(key, glyph, title, desc, on){
+      var b=document.createElement("button"); b.type="button"; b.className="fs-opt"+(on?" on":"");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      var g=document.createElement("span"); g.className="g"; g.textContent=glyph;
+      var w=document.createElement("span"); w.className="w";
+      var t=document.createElement("span"); t.className="t"; t.textContent=title;
+      var d=document.createElement("span"); d.className="d"; d.textContent=desc;
+      w.appendChild(t); w.appendChild(d);
+      var tick=document.createElement("span"); tick.className="tick"; tick.textContent="✓";
+      b.appendChild(g); b.appendChild(w); b.appendChild(tick);
+      b.addEventListener("click", function(){ chooseFeel(key); });
+      list.appendChild(b); }
+    opt(null, loop.glyph, "Follow the loop",
+        "Whatever “How the chords play” is set to — right now " + loop.label, !isFeel(own));
+    FEEL_ORDER.forEach(function(k){ var f=FEELS[k]; opt(k, f.glyph, f.label, f.desc, own===k); });
+  }
+  /* Choosing does not close the sheet: you audition, and the bar plays in the style you
+     just picked, through the same engine the loop uses. */
+  function chooseFeel(key){
+    var pos=feelSheetPos; if(pos<0) return;
+    if(!state.pro){ closeFeelSheet(); openPaywall(); return; }
+    state.progFeels[pos] = isFeel(key) ? key : null;
+    renderProg(); renderFeelSheet(); previewStep(pos); }
+  function previewStep(pos){
+    var c=state.chords[state.progression[pos]]; if(!c) return;
+    var ac=audio(); if(ac.state==="suspended") ac.resume();
+    var barLen=(60/state.bpm)*4;
+    holdForChord(barLen+2);
+    playBar(c, ac.currentTime+0.05, barLen, 0, 1, feelAt(pos)); }
+  function renderPresets(){ var wrap=$("presets"); wrap.innerHTML="";
+    PRESETS.forEach(function(p){ var b=document.createElement("button"); b.className="btn"; b.textContent=p.name;
+      b.addEventListener("click", function(){ progSetAll(p.deg, null); renderProg(); }); wrap.appendChild(b); }); }
+  /* Older saves only carried {name, root, mode, prog}. Fill the rest in from sensible
+     defaults so an idea saved before this version still opens and still exports. */
+  function normaliseSaved(item){
+    var prog=(item.prog||[]).slice();
+    return { name:item.name, root:item.root||0, mode:item.mode||"major",
+             prog:prog, bpm:item.bpm||92, sevenths:!!item.sevenths,
+             instrument:item.instrument||"piano", feel:item.feel||"arp",
+             /* Per-chord styles, one slot per step, null meaning "follow the loop". An
+                idea saved before this version has none and gets all nulls, so it opens
+                and exports sounding exactly as it always did. */
+             feels:normFeels(item.feels, prog.length),
+             drums:item.drums||"off", bass:item.bass||"on" };
+  }
+  function openSaved(item){
+    var it = normaliseSaved(item);
+    state.root=it.root; state.mode=it.mode; state.sevenths=it.sevenths;
+    progSetAll(it.prog, it.feels); state.bpm=it.bpm;
+    state.feel=it.feel; state.drums=it.drums; state.bass=it.bass;
+    if(it.instrument && (state.pro || PRO_INSTS.indexOf(it.instrument)<0)) state.instrument=it.instrument;
+    syncAllControls(); renderKeySelect(); buildChords(); renderPalette(); renderProg();
+    /* Opening an idea from the Ideas tab should show you the idea, not leave you looking at
+       the list you tapped it in. */
+    showTab("build");
+    showToast("Opened “"+it.name+"”");
+  }
+  function renderSaved(){ var wrap=$("saved"); wrap.innerHTML=""; var list=loadSaved();
+    if(list.length===0){ wrap.innerHTML='<span class="empty">Nothing saved yet.</span>'; return; }
+    list.forEach(function(item, i){
+      var it=normaliseSaved(item);
+      var row=document.createElement("div"); row.className="savedrow";
+
+      var open=document.createElement("button"); open.type="button"; open.className="nm";
+      open.innerHTML = "♪ " + escapeHtml(it.name) +
+        '<br><span class="meta">' + NOTE[it.root] + " " + it.mode + " · " +
+        it.prog.length + " chords · " + it.bpm + " BPM" +
+        (it.feels.some(isFeel) ? " · mixed play styles" : "") + "</span>";
+      open.addEventListener("click", function(){ openSaved(item); });
+
+      var exp=document.createElement("button"); exp.type="button"; exp.className="mini";
+      exp.textContent="♫"; exp.setAttribute("aria-label","Export “"+it.name+"” as an audio file");
+      exp.addEventListener("click", function(){ exportAudio(it, exp); });
+
+      var del=document.createElement("button"); del.type="button"; del.className="mini del";
+      del.textContent="✕"; del.setAttribute("aria-label","Delete “"+it.name+"”");
+      del.addEventListener("click", function(){
+        var l=loadSaved(); l.splice(i,1); persist(l); renderSaved(); showToast("Deleted");
+      });
+
+      row.appendChild(open); row.appendChild(exp); row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+  function escapeHtml(x){ return String(x).replace(/[&<>"]/g, function(c){
+    return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]; }); }
+  function addChord(idx){ progAdd(idx); renderProg(); }
+
+  /* drag-to-reorder progression chips (pointer based, works on touch + mouse)
+     `el` is the tile (what moves, and what the other tiles are hit-tested against);
+     `handle` is the chord button inside it, so a press on ✕ or on the style button is
+     never mistaken for the start of a drag. */
+  function makeDraggable(el, handle, pos){
+    var sx=0, sy=0, moved=false, pid=null, target=pos;
+    handle.addEventListener("pointerdown", function(e){
+      pid=e.pointerId; sx=e.clientX; sy=e.clientY; moved=false; target=pos;
+      try{ handle.setPointerCapture(pid); }catch(_){}
+    });
+    handle.addEventListener("pointermove", function(e){
+      if(pid===null) return;
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(!moved && (Math.abs(dx)+Math.abs(dy))>7){ moved=true; el.classList.add("dragging"); }
+      if(moved){
+        el.style.transform="translate("+dx+"px,"+dy+"px)";
+        var chips=$("prog").querySelectorAll(".pchip"), best=pos;
+        for(var i=0;i<chips.length;i++){ if(chips[i]===el) continue; var r=chips[i].getBoundingClientRect();
+          if(e.clientX>r.left && e.clientX<r.right && e.clientY>r.top-10 && e.clientY<r.bottom+10){ best=i; break; } }
+        target=best;
+      }
+    });
+    function end(){ if(pid===null) return; try{ handle.releasePointerCapture(pid); }catch(_){}
+      pid=null; el.style.transform=""; el.classList.remove("dragging");
+      if(moved){ if(target!==pos) progMove(pos, target); renderProg(); }
+      else { playChord(state.chords[state.progression[pos]].notes, 1.2); }
+    }
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+  }
+
+  /* ---------------- playback ---------------- */
+  var playing=false, schedTimer=null, nextTime=0, playIdx=0;
+  function clearHi(){ var c=document.querySelectorAll(".pchip"); for(var i=0;i<c.length;i++) c[i].classList.remove("playing"); }
+  function stop(){
+    var wasPlaying = playing;
+    if(playing) KeepAlive.hold(false);        // release the media route with the transport
+    if(wasPlaying) Review.note("loop");       // a loop that ran and was stopped = a finished task
+    playing=false; if(schedTimer){clearInterval(schedTimer); schedTimer=null;} playIdx=0; clearHi(); $("play").textContent="▶ Play loop";
+    document.body.classList.remove("is-playing"); }
+  function play(){
+    if(state.progression.length===0) return;
+    if(playing){ stop(); return; }
+    var ac=audio(); if(ac.state==="suspended") ac.resume();
+    /* Hold a live media element open for as long as the loop runs. This is the piece
+       ChordLoop was missing: without it the oscillators and sample players are scheduled
+       onto a route iOS has not been told is media playback, and on device that is the
+       difference between "sometimes" and "reliably". */
+    KeepAlive.hold(true);
+    playing=true; playIdx=0; $("play").textContent="⏸ Pause";
+    /* Purely cosmetic: the note on the Play button bounces while the loop runs, and stops
+       the moment it does. CSS-only from here (see body.is-playing), and honoured by
+       prefers-reduced-motion. */
+    document.body.classList.add("is-playing");
+    nextTime=ac.currentTime+0.1; schedTimer=setInterval(scheduler,25); scheduler();
+  }
+  function scheduler(){
+    if(!playing) return;
+    var barLen=(60/state.bpm)*4;
+    while(nextTime < AC.currentTime + 0.18){
+      var pos=playIdx % state.progression.length;
+      var c=state.chords[state.progression[pos]];
+      playBar(c, nextTime, barLen, playIdx, state.progression.length, feelAt(pos));
+      playDrums(nextTime, barLen); scheduleHi(pos, nextTime);
+      nextTime += barLen; playIdx++;
+    }
+  }
+  function scheduleHi(pos, when){
+    var delay=Math.max(0,(when-AC.currentTime)*1000);
+    setTimeout(function(){ if(!playing) return; var c=document.querySelectorAll(".pchip");
+      for(var i=0;i<c.length;i++) c[i].classList.toggle("playing", i===pos); }, delay);
+  }
+
+  /* ---------------- audio export ----------------
+     Renders the progression to a real audio file. The point of the rig refactor above is
+     that this is NOT a second sound engine: it installs an OfflineAudioContext and calls
+     the same playBar()/playDrums() the transport calls, so the file is what you heard.
+     An export that sounds different from the app would be worse than no export at all. */
+
+  /* Every decode this session, so an export can wait for the instrument it is about to
+     render instead of quietly rendering the oscillator fallback into a shareable file. */
+  function pick(v, dflt){ return (v === undefined || v === null) ? dflt : v; }
+
+  function samplesReady(){
+    loadSamples();
+    var wait = SMP.pending.slice();
+    return Promise.all(wait).then(function(){
+      // A set that started loading because of THIS call adds more promises as it goes.
+      return SMP.pending.length > wait.length ? samplesReady() : null;
+    });
+  }
+
+  /* AudioBuffer -> 16-bit PCM .wav bytes. WAV on purpose: it needs no encoder, every
+     app on iOS opens it, and the share sheet treats it as audio. */
+  function encodeWav(buf){
+    var ch = Math.min(2, buf.numberOfChannels), n = buf.length, rate = buf.sampleRate;
+    var chans = [], c;
+    for(c=0;c<ch;c++) chans.push(buf.getChannelData(c));
+
+    /* Normalise to just under full scale. A pad rendered at its natural level is very
+       quiet next to anything else in a camera roll or a message thread. */
+    var pk = 0, i;
+    for(c=0;c<ch;c++){ var d=chans[c]; for(i=0;i<n;i++){ var a=d[i]<0?-d[i]:d[i]; if(a>pk) pk=a; } }
+    var gain = pk > 0.0001 ? 0.89/pk : 1;
+
+    var bytes = 44 + n*ch*2;
+    var ab = new ArrayBuffer(bytes), v = new DataView(ab);
+    function str(o,x){ for(var k=0;k<x.length;k++) v.setUint8(o+k, x.charCodeAt(k)); }
+    str(0,"RIFF"); v.setUint32(4, bytes-8, true); str(8,"WAVE");
+    str(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,ch,true);
+    v.setUint32(24,rate,true); v.setUint32(28,rate*ch*2,true);
+    v.setUint16(32,ch*2,true); v.setUint16(34,16,true);
+    str(36,"data"); v.setUint32(40, n*ch*2, true);
+    var o = 44;
+    for(i=0;i<n;i++){
+      for(c=0;c<ch;c++){
+        var x = chans[c][i]*gain;
+        x = x < -1 ? -1 : x > 1 ? 1 : x;
+        v.setInt16(o, x < 0 ? x*0x8000 : x*0x7fff, true); o += 2;
+      }
+    }
+    return new Uint8Array(ab);
+  }
+
+  /* The whole progression, `repeats` times through, plus enough tail for the last chord
+     to actually finish ringing rather than being guillotined at the barline. */
+  function renderProgressionToWav(opts){
+    opts = opts || {};
+    var prog = (opts.progression || state.progression).slice();
+    if(!prog.length) return Promise.reject(new Error("Nothing to export — add some chords first."));
+    var reps = Math.max(1, opts.repeats || 2);
+    /* A saved idea carries its own key, tempo and sound. Render THAT, not the state the
+       app happens to be sitting in, or exporting from the saved list silently transposes. */
+    var chords = chordsFor(pick(opts.root, state.root), pick(opts.mode, state.mode),
+                           pick(opts.sevenths, state.sevenths));
+    var inst = pick(opts.instrument, state.instrument);
+    var feel = pick(opts.feel, state.feel);
+    /* Per-chord styles for THIS render. A saved idea brings its own; the live progression
+       uses the one on screen. Anything missing falls back to `feel`, exactly as the
+       transport does — the export and the loop read the same two sources. */
+    var feels = normFeels(opts.feels || (opts.progression ? null : state.progFeels), prog.length);
+    var drums = pick(opts.drums, state.drums);
+    var bass = pick(opts.bass, state.bass);
+    var bpm = pick(opts.bpm, state.bpm);
+    var ac = audio();
+    loadInstrument(inst);
+    return samplesReady().then(function(){
+      var rate = ac.sampleRate;
+      var barLen = (60/bpm)*4;
+      var bars = prog.length * reps;
+      var tail = 3.2, LEAD_IN = 0.06;
+      var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      var oc = new OC(2, Math.ceil((LEAD_IN + bars*barLen + tail)*rate), rate);
+      var rig = buildRig(oc);
+
+      withRig(rig, function(){
+        /* Start the voice-leading from a clean slate so an export is deterministic and
+           always begins in a sensible register, wherever the live transport happened to
+           have wandered to. The sound settings are swapped in for the render pass and put
+           straight back, exactly as withRig() does for the audio graph. */
+        var pl=VOICE.last, pi=VOICE.inst;
+        var pInst=state.instrument, pFeel=state.feel, pDrums=state.drums, pBass=state.bass;
+        VOICE.last=null; VOICE.inst=null;
+        state.instrument=inst; state.feel=feel; state.drums=drums; state.bass=bass;
+        try{
+          for(var b=0;b<bars;b++){
+            var pos = b % prog.length;
+            var c = chords[prog[pos]];
+            if(!c) continue;
+            playBar(c, LEAD_IN + b*barLen, barLen, b, prog.length,
+                    isFeel(feels[pos]) ? feels[pos] : feel);
+            playDrums(LEAD_IN + b*barLen, barLen);
+          }
+        } finally {
+          VOICE.last=pl; VOICE.inst=pi;
+          state.instrument=pInst; state.feel=pFeel; state.drums=pDrums; state.bass=pBass;
+        }
+      });
+
+      return oc.startRendering().then(function(rendered){
+        return { bytes: encodeWav(rendered), seconds: LEAD_IN + bars*barLen + tail };
+      });
+    });
+  }
+
+  /* ---------------- share a rendered audio file ----------------
+     The progression, as a real .wav, handed to the iOS share sheet — AirDrop it, message
+     it, drop it in Files, open it in GarageBand. Two paths:
+       NATIVE  Filesystem.writeFile into the cache directory, then Share.share({files}).
+               The bytes never leave the device unless the user picks somewhere to send
+               them, which keeps the "runs on-device" promise on the privacy page true.
+       BROWSER an object-URL download, so the feature is testable without a phone.
+     Note the ordering trap this avoids: iOS only lets a share sheet open from a real user
+     gesture, and rendering takes a moment, so the button reports progress rather than
+     appearing dead. */
+  function bytesToBase64(bytes){
+    var s = "", CH = 0x8000;
+    for(var i=0;i<bytes.length;i+=CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i+CH));
+    return btoa(s);
+  }
+
+  function safeFileName(name){
+    var base = String(name || "").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-");
+    /* Every exported file says where it came from: a WAV that lands in someone else's
+       Files or GarageBand is the only advert ChordLoop gets on that phone. */
+    return ("ChordLoop-" + (base || "progression")).slice(0, 50) + ".wav";
+  }
+
+  function capPlugin(name){
+    var C = window.Capacitor;
+    return (C && C.Plugins && C.Plugins[name]) || null;
+  }
+  function isNativeApp(){
+    var C = window.Capacitor;
+    return !!(C && (typeof C.isNativePlatform === "function" ? C.isNativePlatform() : C.isNative));
+  }
+
+  var exporting = false;
+  /* `item` is a normalised saved idea, or null for whatever is on screen now. */
+  function exportAudio(item, btn){
+    if(exporting) return;
+    var prog = item ? item.prog : state.progression;
+    if(!prog || !prog.length){ showToast("Add some chords first"); return; }
+
+    exporting = true;
+    var label = btn ? btn.textContent : null;
+    if(btn){ btn.disabled = true; btn.textContent = "…"; }
+    showToast("Rendering audio…");
+    primeAudio();
+
+    var name = item ? item.name : (NOTE[state.root] + " " + state.mode + " progression");
+    renderProgressionToWav(item ? {
+      progression:item.prog, root:item.root, mode:item.mode, sevenths:item.sevenths,
+      bpm:item.bpm, instrument:item.instrument, feel:item.feel, feels:item.feels,
+      drums:item.drums, bass:item.bass, repeats:2
+    } : { repeats:2 }).then(function(r){
+      var file = safeFileName(name);
+      if(isNativeApp()){
+        var FS = capPlugin("Filesystem"), Share = capPlugin("Share");
+        if(!FS || !Share) throw new Error("Sharing isn't available in this build.");
+        return FS.writeFile({ path:file, data:bytesToBase64(r.bytes), directory:"CACHE" })
+          .then(function(w){
+            return Share.share({ title:name, dialogTitle:"Share “"+name+"”", files:[w.uri] });
+          })
+          .then(function(){ showToast("Shared"); Review.note("export"); },
+                function(e){
+                  // The user dismissing the sheet rejects too — that is not an error.
+                  if(e && /cancel/i.test(e.message||"")) return;
+                  throw e;
+                });
+      }
+      var blob = new Blob([r.bytes], { type:"audio/wav" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = file; document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      showToast("Saved " + file);
+    }).catch(function(e){
+      logLoud("audio export failed: " + (e && e.message || e));
+      showToast("Export failed: " + (e && e.message || e));
+    }).then(function(){
+      exporting = false;
+      if(btn){ btn.disabled = false; btn.textContent = label; }
+    });
+  }
+
+  /* ---------------- MIDI export ---------------- */
+  function varLen(v){ var buf=[v&0x7f]; v=Math.floor(v/128); while(v>0){ buf.unshift((v&0x7f)|0x80); v=Math.floor(v/128); } return buf; }
+  function buildMidi(){
+    if(state.progression.length===0) return null;
+    var TPQ=480, barTicks=TPQ*4, events=[];
+    var tempo=Math.round(60000000/state.bpm);
+    events.push({t:0, d:[0xFF,0x51,0x03,(tempo>>16)&0xff,(tempo>>8)&0xff,tempo&0xff]});
+    /* Track name + a text event: a DAW shows the first as the region name, and the second
+       travels with the file wherever it is sent. Pure ASCII so every DAW reads it. */
+    events.push({t:0, d:[0xFF,0x03].concat(midiText("ChordLoop"))});
+    events.push({t:0, d:[0xFF,0x01].concat(midiText("Made with ChordLoop - " + STORE_URL_PLAIN))});
+    events.push({t:0, d:[0xC0,0]});
+    events.push({t:0, d:[0xC1,33]});
+    state.progression.forEach(function(pi, bar){
+      var c=state.chords[pi], start=bar*barTicks, endT=start+barTicks-4;
+      c.notes.forEach(function(m){ events.push({t:start, d:[0x90,m,80]}); events.push({t:endT, d:[0x80,m,0]}); });
+      var bn=c.notes[0]-12; events.push({t:start, d:[0x91,bn,90]}); events.push({t:endT, d:[0x81,bn,0]});
+    });
+    events.sort(function(a,b){ if(a.t!==b.t) return a.t-b.t; var ao=(a.d[0]&0xf0)===0x80, bo=(b.d[0]&0xf0)===0x80; return (bo?1:0)-(ao?1:0); });
+    var track=[], last=0;
+    events.forEach(function(ev){ track=track.concat(varLen(ev.t-last)); last=ev.t; track=track.concat(ev.d); });
+    track=track.concat([0x00,0xFF,0x2F,0x00]);
+    var L=track.length;
+    var head=[0x4D,0x54,0x68,0x64,0,0,0,6,0,0,0,1,(TPQ>>8)&0xff,TPQ&0xff];
+    var trk=[0x4D,0x54,0x72,0x6B,(L>>24)&0xff,(L>>16)&0xff,(L>>8)&0xff,L&0xff];
+    return new Uint8Array(head.concat(trk).concat(track));
+  }
+  function midiText(str){
+    var b=[]; for(var i=0;i<str.length;i++) b.push(str.charCodeAt(i) & 0x7f);
+    return varLen(b.length).concat(b);
+  }
+  /* MIDI export is the Pro headline, and until 1.3 it only ever did a browser download:
+     an <a download> on a blob URL. WKWebView has no download UI of its own, so on the
+     phone that path is at best unreliable, and the toast claimed success either way. On
+     device it now takes the same road as the WAV export, which is proven: write to the
+     cache directory, hand it to the share sheet ("Save to Files", AirDrop, open in
+     GarageBand). The browser download stays for the web preview and the tests. */
+  function exportMidi(){
+    var bytes=buildMidi(); if(!bytes){ showToast("Add some chords first"); return; }
+    var file="ChordLoop-"+NOTE[state.root].replace(/[^\w]/g,"s")+"-"+state.mode+".mid";
+    if(isNativeApp()){
+      var FS = capPlugin("Filesystem"), Share = capPlugin("Share");
+      if(!FS || !Share){ showToast("Sharing isn't available in this build."); return; }
+      FS.writeFile({ path:file, data:bytesToBase64(bytes), directory:"CACHE" })
+        .then(function(w){ return Share.share({ title:file, dialogTitle:"Share MIDI", files:[w.uri] }); })
+        .then(function(){ showToast("MIDI shared"); Review.note("export"); },
+              function(e){
+                if(e && /cancel/i.test(e.message||"")) return;
+                logLoud("midi export failed: " + (e && e.message || e));
+                showToast("MIDI export failed: " + (e && e.message || e));
+              });
+      return;
+    }
+    try{
+      var blob=new Blob([bytes], {type:"audio/midi"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+      a.href=url; a.download=file; document.body.appendChild(a); a.click();
+      setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 600);
+      showToast("MIDI file exported");
+    }catch(e){ showToast("Export not supported here"); }
+  }
+
+  /* ---------------- saving / sharing ---------------- */
+  function loadSaved(){ try{ return JSON.parse(localStorage.getItem("chordloop_saved")||"[]"); }catch(e){ return window.__mem||[]; } }
+  function persist(list){ try{ localStorage.setItem("chordloop_saved", JSON.stringify(list)); }catch(e){ window.__mem=list; } }
+  function saveCurrent(){
+    if(state.progression.length===0){ return; }
+    var names = state.progression.map(function(i){return state.chords[i].name;}).join(" ");
+    var nm = prompt("Name this idea:", NOTE[state.root]+" "+state.mode+" — "+names); if(!nm) return;
+    var list=loadSaved(); list.unshift({ name:nm, root:state.root, mode:state.mode,
+      prog:state.progression.slice(), bpm:state.bpm, sevenths:state.sevenths,
+      instrument:state.instrument, feel:state.feel, feels:state.progFeels.slice(),
+      drums:state.drums, bass:state.bass });
+    if(list.length>12) list.pop(); persist(list); renderSaved();
+  }
+  /* ---------------- the App Store link + the ratings prompt ----------------
+     STORE_PT is the provider token from App Store Connect -> App Analytics -> Campaign
+     links. With it, a link carries &ct=<campaign> and installs from shared progressions
+     show up under Sources -> Campaign; without it Apple ignores ct, so the plain link is
+     used rather than a half-formed campaign URL. */
+  var STORE_URL_PLAIN = "https://apps.apple.com/app/id6787716007";
+  var STORE_PT = "129125244";   // Jonathan's App Store provider token (ASC -> App Analytics -> Campaigns)
+  function storeLink(campaign){
+    return STORE_PT ? STORE_URL_PLAIN + "?pt=" + STORE_PT + "&ct=" + encodeURIComponent(campaign) + "&mt=8"
+                    : STORE_URL_PLAIN;
+  }
+  /* Ask for a rating only after the user has DONE something with the app — never at
+     launch or in a first look around (App Review rejects onboarding prompts, 5.6.3).
+     The moments: the 3rd loop played and stopped, or any export that reached the share
+     sheet. At most once per 120 days from our side; iOS adds its own cap of 3 a year and
+     may show nothing at all, which is fine. The request goes to StoreKit through the
+     InAppReview plugin; in a browser there is no plugin and this does nothing. */
+  var Review = (function(){
+    var KEY = "chordloop_review", LOOPS = 3, GAP_MS = 120*24*3600*1000;
+    function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"null") || {loops:0, exports:0, asked:0}; }catch(e){ return {loops:0, exports:0, asked:0}; } }
+    function save(r){ try{ localStorage.setItem(KEY, JSON.stringify(r)); }catch(e){} }
+    function due(r, now){
+      if(r.asked && now - r.asked < GAP_MS) return false;
+      return r.loops >= LOOPS || r.exports >= 1;
+    }
+    function note(kind){
+      var r = load();
+      if(kind === "loop") r.loops++; else if(kind === "export") r.exports++;
+      var now = Date.now();
+      if(due(r, now)){
+        var P = capPlugin("InAppReview");
+        if(P && typeof P.requestReview === "function"){
+          r.asked = now; r.loops = 0; r.exports = 0;
+          // A beat after the action, so the sheet never lands on top of a share sheet.
+          setTimeout(function(){ try{ P.requestReview().catch(function(){}); }catch(e){} }, 1200);
+        }
+      }
+      save(r);
+    }
+    return { note:note, due:due };
+  })();
+
+  function showToast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(showToast._t); showToast._t=setTimeout(function(){ t.classList.remove("show"); }, 1700); }
+  function shareProg(){
+    if(state.progression.length===0){ showToast("Add some chords first"); return; }
+    var names = state.progression.map(function(i){return state.chords[i].name;}).join(" · ");
+    var txt = "ChordLoop — "+NOTE[state.root]+" "+state.mode+(state.sevenths?" 7ths":"")+": "+names+" · "+state.bpm+" BPM";
+    /* A shared progression is the one thing a ChordLoop user sends to another musician,
+       so it ends with where to hear it. Before 1.3 it ended with nothing. */
+    txt += "\n\nLoop it free in ChordLoop: " + storeLink("share");
+    var NS = isNativeApp() ? capPlugin("Share") : null;
+    if(NS){ NS.share({ title:"ChordLoop progression", text:txt, dialogTitle:"Share progression" }).catch(function(){}); }
+    else if(navigator.share){ navigator.share({ title:"ChordLoop progression", text:txt }).catch(function(){}); }
+    else if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ showToast("Copied to clipboard"); }).catch(function(){ showToast("Copy failed"); }); }
+    else { showToast("Sharing not supported here"); }
+  }
+  /* ---------------- external links ----------------
+     Inside the native webview a bare <a href> either does nothing or replaces the app's own
+     document with the web page and strands the user with no way back — a Guideline 2.1 dead
+     end. @capacitor/browser opens SFSafariViewController over the app instead, with a Done
+     button. window.open is the fallback for the plain-browser case and for a native build
+     where the plugin somehow didn't load; the href stays real either way, so the link is
+     never dead. */
+  function openExternal(url){
+    try{
+      var C = window.Capacitor;
+      var B = C && C.Plugins && C.Plugins.Browser;
+      if(B && typeof B.open === "function"){ B.open({ url:url, presentationStyle:"popover" }); return; }
+    }catch(e){}
+    try{
+      var w = window.open(url, "_blank", "noopener");
+      if(w) return;
+    }catch(e){}
+    try{ window.location.href = url; }catch(e){}
+  }
+  function wireLink(a){
+    if(!a) return;
+    a.addEventListener("click", function(e){ e.preventDefault(); openExternal(a.href); });
+  }
+
+  /* The instrument list. It was 13 buttons across three groups for a control where only
+     one thing can be true at a time; a menu says that by being a menu. Pro instruments stay
+     in the list, labelled, so the upgrade is visible rather than hidden. */
+  function renderInstSel(){
+    var sel = $("instSel"); if(!sel) return;
+    sel.querySelectorAll("option").forEach(function(o){
+      if(o.dataset.baseLabel === undefined) o.dataset.baseLabel = o.textContent;
+      var locked = !state.pro && PRO_INSTS.indexOf(o.dataset.inst)>=0;
+      o.classList.toggle("locked", locked);
+      o.textContent = o.dataset.baseLabel + (locked ? " (Pro)" : "");
+    });
+    syncInstSel();
+  }
+  function syncInstSel(){ var sel=$("instSel"); if(sel) sel.value = state.instrument; }
+
+  /* ---------------- appearance ----------------
+     Theme and accent are two independent attributes on <html>; the stylesheet does the rest.
+     Stored per device alongside the saved ideas. */
+  var THEMES = ["cream","paper","mint","slate"];
+  var ACCENTS = ["sun","teal","coral","sky","violet"];
+  var look = { theme:"cream", accent:"sun" };
+  function applyLook(){
+    var r = document.documentElement;
+    if(look.theme === "cream") r.removeAttribute("data-theme");
+    else r.setAttribute("data-theme", look.theme);
+    if(look.accent === "sun") r.removeAttribute("data-accent");
+    else r.setAttribute("data-accent", look.accent);
+    [["themePick","theme"],["accentPick","accent"]].forEach(function(p){
+      var box = $(p[0]); if(!box) return;
+      box.querySelectorAll("button").forEach(function(b){
+        var on = b.dataset[p[1]] === look[p[1]];
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    });
+  }
+  function saveLook(){ try{ localStorage.setItem("chordloop_look", JSON.stringify(look)); }catch(e){} }
+  function loadLook(){
+    try{
+      var v = JSON.parse(localStorage.getItem("chordloop_look")||"null");
+      if(v && THEMES.indexOf(v.theme)>=0) look.theme = v.theme;
+      if(v && ACCENTS.indexOf(v.accent)>=0) look.accent = v.accent;
+    }catch(e){}
+  }
+
+  function syncModeButtons(){ $("mode").querySelectorAll("button").forEach(function(b){
+    var on = b.dataset.mode===state.mode;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  }); }
+  function pickGroup(id, key, attr){ $(id).querySelectorAll("button").forEach(function(b){
+    var on = b.dataset[attr]===state[key];
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  }); }
+
+  /* Opening a saved idea restores its whole arrangement, so every control has to be put
+     back in step with it — otherwise the buttons say one thing and the app plays another. */
+  function syncAllControls(){
+    syncModeButtons();
+    syncInstSel();
+    pickGroup("feel","feel","feel");
+    pickGroup("drums","drums","drum");
+    pickGroup("bass","bass","bass");
+    $("seventhsToggle").querySelectorAll("button").forEach(function(x){
+      var on = (x.dataset.sev==="on")===state.sevenths;
+      x.classList.toggle("on", on); x.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    $("tempo").value = state.bpm; $("bpmLabel").textContent = state.bpm+" BPM";
+  }
+
+  /* ---------------- Pro unlock (freemium) ---------------- */
+  function tagBtn(btn, locked){ if(!btn) return; var t=btn.querySelector(".protag");
+    if(locked){ if(!t){ t=document.createElement("span"); t.className="protag"; t.textContent="PRO"; btn.appendChild(t); } }
+    else if(t){ t.parentNode.removeChild(t); }
+    btn.classList.toggle("locked", locked);
+  }
+  function refreshLocks(){
+    renderInstSel();
+    $("drums").querySelectorAll("button").forEach(function(b){ tagBtn(b, !state.pro && PRO_DRUMS.indexOf(b.dataset.drum)>=0); });
+    tagBtn($("midi"), !state.pro);
+    /* The per-chord style buttons carry the same badge as every other Pro control. They
+       are re-created by renderProg(), so re-render rather than re-tag: their labels and
+       the sheet's availability both depend on the entitlement. */
+    if(state.chords.length && $("prog")) renderProg();
+    if(!state.pro) closeFeelSheet();
+  }
+  function openPaywall(){ $("paywall").classList.add("show"); }
+  function closePaywall(){ $("paywall").classList.remove("show"); }
+  /* ---------------------------------------------------------------------------
+     ENTITLEMENT — read this before touching anything below.
+
+     ChordLoop was rejected under Guideline 2.1(b): "The Pro features were unlocked
+     without completing a successful purchase." They were. These buttons used to read:
+
+         if(iap && iap.native){ iap.buy(); return; }
+         unlockPro();                                    // <-- free Pro, no purchase
+
+     and `native` was a snapshot taken when the script parsed, so a webview that injected
+     window.Capacitor a moment late left the app permanently in "plain browser" mode. In
+     that state the StoreKit bridge also returned early and never initialised, so tapping
+     "Unlock everything — $3.99" ran the local unlock and granted Pro instantly. On a
+     reviewer's device that is exactly what happened.
+
+     Apple rejected it AGAIN after that fix, on the same guideline, because removing the
+     local unlock was not enough: the bridge itself was granting without a purchase. Two
+     separate holes, both in code that looked like it was asking StoreKit — one granted on
+     the app's own receipt at launch, one granted the moment the purchase sheet opened.
+     Both are dissected in the bridge at the bottom of this file (see the `approved` hook
+     and `txProvesPurchase`), and in IAP_PATTERN.md §1d.
+
+     The rule now, no exceptions: Pro is granted ONLY through applyEntitlement(), and its
+     only legitimate trigger is the StoreKit bridge finding a transaction FOR THIS PRODUCT
+     ID in APPROVED or FINISHED state in the local receipts. Not "the store says owned",
+     not "a receipt verified" — a completed transaction for this product. There is no local
+     unlock of any kind — not for the browser, not for debugging — and no global that
+     grants. If StoreKit is unavailable the purchase fails with an explanation and Pro
+     STAYS LOCKED.
+
+     localStorage only ever mirrors a grant that already stood on such a transaction. */
+  function setPro(on){
+    state.pro = !!on;
+    try{
+      if(on) localStorage.setItem("chordloop_pro", "1");
+      else localStorage.removeItem("chordloop_pro");
+    }catch(e){}
+    refreshLocks();
+  }
+
+  function applyEntitlement(owned, source){
+    try{ console.log("[ChordLoop entitlement] " + (owned ? "GRANT" : "revoke") + " via " + (source || "?")); }catch(e){}
+    if(owned){
+      var wasLocked = !state.pro;
+      setPro(true);
+      if(wasLocked){ closePaywall(); showToast("ChordLoop Pro unlocked"); }
+      return;
+    }
+    /* Revocation. Nothing in the bridge reports false any more: without a receipt
+       validator an unvalidated local receipt can prove ownership but never prove its
+       absence — iOS re-delivers only unfinished transactions, so a paying customer's
+       receipt looks empty on the next launch. Revoking on that would have taken Pro away
+       from everyone who paid. Kept as the one way the entitlement could ever be turned
+       back off (a real validator, later), and so this function has a defined answer for
+       every input. */
+    var wasPro = state.pro;
+    setPro(false);          // unconditional: clears the cached flag even if this session
+                            // never had Pro in memory, so a stale key can't outlive it
+    if(wasPro) showToast("ChordLoop Pro isn't active on this Apple ID.");
+  }
+
+  /* The bridge REPORTS entitlement through this event; it cannot reach in and set it.
+     One direction, one entry point, auditable in one grep. */
+  document.addEventListener("chordloop:entitlement", function(e){
+    var d = (e && e.detail) || {};
+    applyEntitlement(!!d.owned, d.source);
+  });
+
+  /* ---------------- tabs ----------------
+     Pure show/hide over the SAME DOM. Every control still exists on every tab — nothing is
+     created, destroyed or re-bound when you switch — so the audio engine, the entitlement
+     locks and every existing handler are untouched by navigation. A hidden panel's buttons
+     are still real buttons with their state on them; they are simply not painted. */
+  var TABS = { build:"panelBuild", ideas:"panelIdeas", settings:"panelSettings" };
+  function showTab(name){
+    if(!TABS[name]) name = "build";
+    Object.keys(TABS).forEach(function(k){
+      var p = $(TABS[k]); if(p) p.hidden = (k !== name);
+    });
+    $("tabs").querySelectorAll("button").forEach(function(b){
+      var on = b.dataset.tab === name;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    try{ window.scrollTo(0, 0); }catch(e){}
+  }
+  $("tabs").querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click", function(){ showTab(b.dataset.tab); });
+  });
+
+  /* ---------------- wire up ---------------- */
+  $("key").addEventListener("change", function(e){ state.root=parseInt(e.target.value,10); buildChords(); renderPalette(); renderProg(); });
+  $("mode").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){ state.mode=b.dataset.mode; syncModeButtons(); buildChords(); renderPalette(); renderProg(); }); });
+  $("instSel").addEventListener("change", function(){
+      var want = $("instSel").value;
+      /* A locked instrument must not become the sound. Put the menu back on what is
+         actually playing FIRST, then offer Pro — otherwise the menu lies about the
+         arrangement for as long as the sheet is open. */
+      if(!state.pro && PRO_INSTS.indexOf(want)>=0){ syncInstSel(); openPaywall(); return; }
+      state.instrument = want;
+      if(state.chords[0]) playChord(state.chords[0].notes, 1.7);
+    });
+  $("feel").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      state.feel=b.dataset.feel; pickGroup("feel","feel","feel");
+      /* Steps that follow the loop display the loop's style, so they have to be redrawn
+         with it — otherwise a tile says Arpeggio while the bar plays Block. */
+      renderProg(); if(feelSheetPos>=0) renderFeelSheet(); }); });
+  $("drums").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      if(!state.pro && PRO_DRUMS.indexOf(b.dataset.drum)>=0){ openPaywall(); return; }
+      state.drums=b.dataset.drum; pickGroup("drums","drums","drum"); }); });
+  $("seventhsToggle").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      state.sevenths=(b.dataset.sev==="on");
+      $("seventhsToggle").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on",(x.dataset.sev==="on")===state.sevenths); });
+      buildChords(); renderPalette(); renderProg();
+    }); });
+  $("bass").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      state.bass=b.dataset.bass; pickGroup("bass","bass","bass"); }); });
+  $("themePick").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      look.theme = b.dataset.theme; applyLook(); saveLook(); }); });
+  $("accentPick").querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){
+      look.accent = b.dataset.accent; applyLook(); saveLook(); }); });
+  $("tempo").addEventListener("input", function(e){ state.bpm=parseInt(e.target.value,10); $("bpmLabel").textContent=state.bpm+" BPM"; });
+  $("exportAudio").addEventListener("click", function(){ exportAudio(null, $("exportAudio")); });
+  $("testTone").addEventListener("click", testTone);
+  $("play").addEventListener("click", play);
+  $("stop").addEventListener("click", stop);
+  $("midi").addEventListener("click", function(){ if(!state.pro){ openPaywall(); return; } exportMidi(); });
+  $("share").addEventListener("click", shareProg);
+  $("fsClose").addEventListener("click", closeFeelSheet);
+  $("feelSheet").addEventListener("click", function(e){ if(e.target===$("feelSheet")) closeFeelSheet(); });
+  $("clear").addEventListener("click", function(){ stop(); progSetAll([], null); renderProg(); });
+  $("save").addEventListener("click", saveCurrent);
+  wireLink($("lnkPrivacy")); wireLink($("lnkSite")); wireLink($("pwPrivacy"));
+
+  /* Paywall buttons.
+     On the native app these MUST go through StoreKit; the in-page local unlock below is only
+     reachable in a plain browser preview. The decision is made HERE, at click time —
+     not at load time — because the native purchase bridge is injected asynchronously
+     and may not exist yet when this script is parsed. (Deciding at load time is what
+     silently sent real purchases to that local unlock and produced Apple's
+     "no sandbox appeared" rejection.) */
+  /* Both buttons route to StoreKit or explain why they can't. Neither one grants
+     anything — the ONLY way Pro turns on is the entitlement event above, raised by the
+     bridge after Apple has actually sold or confirmed the product. */
+  $("pwBuy").addEventListener("click", function(){
+    var iap = window.ChordLoopIAP;
+    if(iap && iap.native){ iap.buy(); return; }
+    showToast("Purchases are only available in the ChordLoop app from the App Store.");
+  });
+  $("pwRestore").addEventListener("click", function(){
+    var iap = window.ChordLoopIAP;
+    if(iap && iap.native){ iap.restore(); return; }
+    showToast("Restore is only available in the ChordLoop app from the App Store.");
+  });
+  $("pwClose").addEventListener("click", closePaywall);
+
+  /* Deliberately NO grantPro here. The bridge used to be handed the unlock function
+     through this object, which made "turn Pro on" callable by anything that could reach
+     window. It now only gets the toast; entitlement travels the other way, as an event. */
+  window.ChordLoopApp = { toast: showToast };
+  $("paywall").addEventListener("click", function(e){ if(e.target===$("paywall")) closePaywall(); });
+
+  loadLook(); applyLook(); renderInstSel();
+  renderKeySelect(); buildChords(); renderPalette(); renderProg(); renderPresets(); renderSaved(); refreshLocks();
+
+  /* Start decoding at launch instead of waiting for the first tap.
+     An AudioContext may be CREATED without a user gesture (it just starts suspended) and
+     decodeAudioData works fine on a suspended one — only starting sound needs the gesture,
+     and playChord()/play() already resume it. Previously the first tap raced the download
+     and always came out synthesised; now the recordings are usually ready before the user
+     touches anything. If a browser refuses the early context, this is a no-op and the old
+     gesture-driven path in audio() still runs. */
+  try{ audio(); }
+  catch(e){ logLoud("deferred sample preload to first tap: " + (e && e.message || e)); }
+  renderSoundCheck();
+
+  /* PRIME ON EVERY GESTURE — ScootStep's pattern, and the thing ChordLoop never did.
+     iOS only grants audio it can attribute to a user gesture, and it withdraws the grant
+     whenever the app is backgrounded or the audio goes idle. So this is not a one-shot
+     latch: every tap anywhere in the app resumes the context, pushes the one-sample
+     unlock buffer through it, and arms the silent media element. It is idempotent and
+     costs nothing on a context that is already running. */
+  ["pointerdown","touchend","mousedown"].forEach(function(ev){
+    document.addEventListener(ev, primeAudio, { passive:true });
+  });
+
+  /* Background -> foreground. iOS suspends the AudioContext on the way out and does NOT
+     resume it on the way back, and it pauses the keepalive element too — without this,
+     coming back from the lock screen leaves the app silent until something is tapped.
+     Nothing is auto-PLAYED here: the graph is un-suspended, never started.
+
+     Note what is NOT here any more: any attempt to re-activate the native audio session.
+     That is done natively, from the AppDelegate's own lifecycle callbacks. */
+  function onForeground(){
+    if(document.visibilityState !== "visible") return;
+    try{ if(AC && AC.state === "suspended"){ var p = AC.resume(); if(p && p.catch) p.catch(function(){}); } }catch(e){}
+    try{ KeepAlive.rearm(); }catch(e){}
+    renderSoundCheck();
+  }
+  document.addEventListener("visibilitychange", onForeground);
+  window.addEventListener("pageshow", onForeground);
+  window.addEventListener("focus", onForeground);
+})();
+</script>
+  <script>
+/* ChordLoop — native StoreKit in-app purchase bridge (cordova-plugin-purchase v13).
+
+   WHY THIS IS SHAPED THE WAY IT IS
+   The previous version did `if(!(window.CdvPurchase && window.cordova)) return;` at the
+   top level. That runs the instant this script is parsed — long before the native plugin
+   bridge injects CdvPurchase — so it always returned early, the deviceready listener was
+   never registered, StoreKit was never initialized, and the paywall button fell through to
+   the browser-only local unlock. Tapping "Unlock" silently granted Pro and never opened the
+   StoreKit sheet. That is exactly what App Review saw: "no sandbox appeared after we
+   tapped on the purchase button" (Guideline 2.1b).
+
+   The rules that keep that from coming back:
+   1. Decide native-vs-web from window.Capacitor, which the native webview injects before
+      any page script runs — never from plugin globals that arrive asynchronously.
+   2. On native, that local unlock is unreachable. buy()/restore() only ever talk to StoreKit.
+   3. Wait for the plugin properly (already-present OR deviceready OR poll), so we can't
+      miss the moment it becomes available.
+   4. Never fail silently. Every path that can't start a purchase tells the user why. */
+(function(){
+  var PRODUCT_ID = "com.jonathanbiles.chordloop.pro";
+
+  function isNative(){
+    try{
+      var C = window.Capacitor;
+      if(!C) return false;
+      if(typeof C.isNativePlatform === "function") return !!C.isNativePlatform();
+      if(typeof C.isNative !== "undefined") return !!C.isNative;      // older Capacitor
+      if(typeof C.getPlatform === "function") return C.getPlatform() !== "web";
+    }catch(e){}
+    return false;
+  }
+
+  // Published immediately so the paywall's click handlers can route correctly from the
+  // very first tap, even if the store is still starting up.
+  var api = {
+    ready: false,
+    store: null,
+    initStarted: false,
+    missingHooks: [],      // store.when() hooks this plugin build doesn't have — see listen()
+    buy: function(){ notReady(); },
+    restore: function(){ notReady(); }
+  };
+  /* LIVE, not a snapshot. `native: isNative()` used to be evaluated once while this script
+     parsed — before Capacitor had necessarily injected window.Capacitor. A single early
+     read then pinned the app to "browser" for the whole session, which is half of the
+     2.1(b) rejection. Reading it through a getter means the paywall asks the question at
+     tap time, by which point the webview is unambiguously ready. */
+  try{
+    Object.defineProperty(api, "native", { get: isNative, enumerable: true });
+  }catch(e){
+    api.native = isNative();      // pre-ES5 fallback; no such engine ships iOS, but be safe
+  }
+  window.ChordLoopIAP = api;
+
+  function toast(m){
+    try{ if(window.ChordLoopApp && window.ChordLoopApp.toast) return window.ChordLoopApp.toast(m); }catch(e){}
+    try{ console.warn("[IAP]", m); }catch(e){}
+  }
+  function notReady(){ toast("The App Store isn't ready yet — give it a second and try again."); }
+
+  /* Plain browser (no native webview): StoreKit does not exist, so say so on the paywall.
+     Nothing unlocks here — there is no browser unlock any more.
+
+     Note what this no longer does: it does NOT `return`. The old version bailed out of the
+     whole bridge when isNative() read false, so a webview that injected window.Capacitor
+     late never initialised StoreKit at all — permanently, for the rest of the session. The
+     copy swap is deferred a beat and the bridge always continues to the plugin wait below,
+     which re-checks. Being wrong about "browser" now costs a sentence of copy, not the
+     entire purchase path. */
+  setTimeout(function(){
+    if(isNative()) return;                    // it was just slow to inject; leave copy alone
+    try{
+      var wnote = document.querySelector("#paywall .pw-note");
+      if(wnote) wnote.textContent = "Running in a web browser — ChordLoop Pro can only be " +
+        "purchased in the iOS app from the App Store, where this is a one-time $3.99 purchase.";
+    }catch(e){}
+  }, 1200);
+
+  function msg(e){ return (e && e.message) || "unknown error"; }
+  function alreadyPro(){ try{ return localStorage.getItem("chordloop_pro") === "1"; }catch(e){ return false; } }
+
+  /* The ONLY place this bridge asserts entitlement, and it has exactly one caller: grant(),
+     below, which is only ever reached through ownsIt() — a completed transaction for this
+     product id. `source` is carried through so the console says which hook it came from.
+     grant() is idempotent because the receipt hooks fire on every launch; without the guard
+     an existing owner gets an "unlocked" toast every time they open the app. */
+  function report(owned, source){
+    try{
+      document.dispatchEvent(new CustomEvent("chordloop:entitlement",
+        { detail: { owned: !!owned, source: source } }));
+      return;
+    }catch(e){}
+    // CustomEvent constructor missing (very old WebKit): fall back to the legacy form.
+    try{
+      var ev = document.createEvent("CustomEvent");
+      ev.initCustomEvent("chordloop:entitlement", false, false, { owned: !!owned, source: source });
+      document.dispatchEvent(ev);
+    }catch(e2){}
+  }
+  function grant(source){
+    if(alreadyPro()) return;              // idempotent: the receipt hooks fire every launch
+    report(true, source || "storekit");
+  }
+
+  /* ---------------------------------------------------------------------------
+     OWNERSHIP — why this does NOT call store.owned(), and must not.
+
+     `store.owned()` is the obvious API and it is WRONG on iOS without a validator.
+     It ends in Internal.LocalReceipts.isOwned(), which scans store.localReceipts for a
+     transaction carrying the product id and then only rejects it if `isConsumed` or
+     `isPending` is set — it never looks at `transaction.state`. Those two flags are set
+     by the Google Play adapter; AppleAppStore.SKTransaction sets NEITHER. And
+     store.localReceipts includes the Apple adapter's *pseudo receipt*, into which
+     `purchasing` / `purchaseEnqueued` push an INITIATED transaction for the product the
+     instant the user taps Buy — before any payment — and `deferred` (Ask to Buy) pushes
+     a PENDING one. Both fire receiptsUpdated on the way in.
+
+     So on device, store.owned() answered TRUE from the moment the StoreKit sheet opened.
+     That is the Guideline 2.1(b) report: "the Pro features were unlocked without
+     completing a successful purchase."
+
+     This walks the receipts itself and demands proof: a transaction for THIS product id,
+     in APPROVED (Apple sold it; not yet finished) or FINISHED state. Anything the user
+     hasn't paid for yet — initiated, pending, cancelled, unknown — is not ownership. If
+     the plugin doesn't expose localReceipts we answer false: failing closed costs a
+     re-purchase attempt, failing open gives the product away. */
+  function txProvesPurchase(t){
+    var P = window.CdvPurchase;
+    if(!t || !P || !P.TransactionState) return false;
+    var prods = t.products || [], mine = false, i;
+    for(i = 0; i < prods.length; i++){ if(prods[i] && prods[i].id === PRODUCT_ID){ mine = true; break; } }
+    // Excludes Apple's virtual APPLICATION transaction, whose product id is the BUNDLE id
+    // and whose state is permanently APPROVED — see the note on the approved hook below.
+    if(!mine) return false;
+    // The in-progress pseudo transaction reuses this id; belt-and-braces with the state test.
+    if(t.transactionId === "virtual." + PRODUCT_ID) return false;
+    var S = P.TransactionState;
+    if(t.state !== S.APPROVED && t.state !== S.FINISHED) return false;
+    if(t.isConsumed || t.isPending) return false;
+    if(t.expirationDate && new Date(t.expirationDate).getTime() <= Date.now()) return false;
+    return true;
+  }
+  function ownsIt(){
+    try{
+      var P = window.CdvPurchase;
+      var receipts = (api.store && api.store.localReceipts) || [];
+      for(var r = 0; r < receipts.length; r++){
+        var rec = receipts[r];
+        if(!rec) continue;
+        if(rec.platform && P && P.Platform && rec.platform !== P.Platform.APPLE_APPSTORE) continue;
+        var txs = rec.transactions || [];
+        for(var t = 0; t < txs.length; t++){ if(txProvesPurchase(txs[t])) return true; }
+      }
+    }catch(e){}
+    return false;
+  }
+
+  /* The purchase itself. Every early return explains itself — a silent no-op here is
+     indistinguishable from the bug that got us rejected. */
+  api.buy = function(){
+    var P = window.CdvPurchase;
+    if(!api.store || !P){ notReady(); return; }
+    /* Not ready is a *recoverable* state, never a dead end: say so and actually push the
+       store forward, so a second tap can succeed. (initialize() is safe to call twice —
+       it returns [] and warns.) */
+    if(!api.ready){ notReady(); startStore(); try{ api.store.update(); }catch(e){} return; }
+    var store = api.store, product, offer;
+
+    // Already paid (reinstall, or a second device on the same Apple ID). Don't let StoreKit
+    // throw "You've already purchased this" — just hand over what they bought.
+    if(ownsIt()){ toast("You already own ChordLoop Pro — unlocking it now."); grant("owned-receipt"); return; }
+
+    try{ product = store.get(PRODUCT_ID, P.Platform.APPLE_APPSTORE); }catch(e){}
+    offer = product && typeof product.getOffer === "function" ? product.getOffer() : null;
+    if(!offer){
+      // The product never loaded: no network, the App Store didn't answer, or the product
+      // isn't live yet. Say so (with the store's own reason when we have it) and retry the
+      // fetch — never just do nothing, which is what App Review saw.
+      toast("Couldn't reach the App Store" + (api.initError ? " (" + api.initError + ")" : "") +
+            ". Check your connection and try again.");
+      try{ store.update(); }catch(e){}
+      return;
+    }
+    try{ store.order(offer); }
+    catch(e){ toast("Purchase couldn't start: " + msg(e)); }
+  };
+
+  /* Apple requires a working Restore for non-consumables. restorePurchases() resolves with
+     an error (or undefined), so report the outcome — including "nothing to restore", which
+     was previously silent and looks identical to a broken button. */
+  api.restore = function(){
+    if(!api.ready || !api.store){ notReady(); return; }
+    toast("Checking your Apple ID for a previous purchase…");
+    var pr;
+    try{ pr = api.store.restorePurchases(); }
+    catch(e){ toast("Restore failed: " + msg(e)); return; }
+    if(!pr || typeof pr.then !== "function") return;   // older builds: .owned() handles it
+    pr.then(function(err){
+      if(err){ toast("Restore failed: " + (err.message || "please try again")); return; }
+      // Let .owned()/receipt processing land before deciding there's nothing to restore.
+      setTimeout(function(){
+        if(alreadyPro()) return;            // .owned() already granted (and toasted)
+        if(ownsIt()){ grant("restore"); return; }
+        toast("No previous ChordLoop Pro purchase found on this Apple ID.");
+      }, 800);
+    })["catch"](function(e){ toast("Restore failed: " + msg(e)); });
+  };
+
+  /* Handy when porting this to another app or debugging a signed build on device:
+     call ChordLoopIAP.diagnose() in Safari's Web Inspector. */
+  api.diagnose = function(){
+    var P = window.CdvPurchase, p = null;
+    try{ p = api.store && api.store.get(PRODUCT_ID, P.Platform.APPLE_APPSTORE); }catch(e){}
+    return {
+      native: api.native, ready: api.ready, pluginPresent: !!P,
+      pluginVersion: (P && P.PLUGIN_VERSION) || null,
+      productId: PRODUCT_ID,
+      initStarted: api.initStarted,
+      productLoaded: !!p, offerAvailable: !!(p && p.getOffer && p.getOffer()),
+      owned: ownsIt(), proPersisted: alreadyPro(), initError: api.initError || null,
+      missingHooks: api.missingHooks.slice(),
+      /* What the plugin's own store.owned() would have said, next to what we accept.
+         On a device mid-purchase these disagree — pluginOwned true, owned false — and
+         that gap IS the 2.1(b) bug this build fixes. Handy on a sandbox device. */
+      pluginOwned: (function(){
+        try{ return !!api.store.owned({ id: PRODUCT_ID, platform: P.Platform.APPLE_APPSTORE }); }
+        catch(e){ return null; }
+      })(),
+      transactions: (function(){
+        var out = [];
+        try{
+          ((api.store && api.store.localReceipts) || []).forEach(function(r){
+            (r.transactions || []).forEach(function(t){
+              out.push({ id: t.transactionId, state: t.state,
+                         products: (t.products || []).map(function(x){ return x && x.id; }),
+                         counts: txProvesPurchase(t) });
+            });
+          });
+        }catch(e){}
+        return out;
+      })()
+    };
+  };
+
+  /* Attach one listener from store.when(). Returns false (and records why) instead of
+     throwing if the plugin doesn't have that hook.
+
+     THIS WRAPPER IS THE WHOLE POINT. v13's when() chain does NOT have .owned() — it is
+     commented out in the plugin source ("// owned: (cb) => ..."). The previous version of
+     this bridge called .owned() directly, so init() threw a TypeError *after* register()
+     but *before* store.initialize(). StoreKit was never started, api.ready stayed false,
+     and every tap on Unlock hit the "isn't ready yet" branch and returned without ever
+     calling store.order(). No sheet, no error, nothing — Apple's second 2.1(b) report.
+
+     Calling store.when() more than once is fine: each call returns a fresh chain object
+     that pushes into the same shared callback arrays on the store. */
+  function listen(store, name, fn){
+    try{
+      var w = store.when();
+      if(w && typeof w[name] === "function"){ w[name](fn); return true; }
+      api.missingHooks.push(name);
+    }catch(e){ api.missingHooks.push(name + " (" + msg(e) + ")"); }
+    try{ console.warn("[IAP] store.when()." + name + " unavailable in plugin v" +
+                      ((window.CdvPurchase && window.CdvPurchase.PLUGIN_VERSION) || "?")); }catch(e){}
+    return false;
+  }
+
+  /* The single decision point: is there a completed, owned transaction right now?
+     Every store hook funnels through here, and grant() is idempotent, so firing often is
+     free. Purchase, reinstall, second device and Restore all land here.
+
+     It does NOT revoke. Without a receipt validator the local receipt cannot prove
+     *absence*: iOS re-delivers only unfinished transactions, so a paying customer's
+     finished purchase is simply not in the receipt on the next launch. The previous
+     version revoked on that, which would have stripped Pro from every paying customer the
+     second time they opened the app. The cached flag is only ever written by a grant that
+     stood on a completed transaction, so there is nothing here to clean up. */
+  function checkOwned(src){
+    if(ownsIt()) grant(src || "receipt");
+  }
+
+  function startStore(){
+    var P = window.CdvPurchase;
+    if(!api.store || api.initStarted) return;
+    api.initStarted = true;
+    try{
+      var p = api.store.initialize([P.Platform.APPLE_APPSTORE]);
+      if(p && typeof p.then === "function"){
+        /* initialize() RESOLVES WITH an array of errors — a resolved promise does not mean
+           everything worked. Keep the reason so buy() can tell the user why rather than
+           just failing to find the product. */
+        p.then(function(errs){
+          api.ready = true;
+          if(errs && errs.length){
+            api.initError = errs[0].message || ("code " + errs[0].code);
+            try{ console.warn("[IAP] initialize() returned errors:", errs); }catch(e){}
+          }
+        })["catch"](function(e){ api.initStarted = false; toast("The App Store didn't start: " + msg(e)); });
+      } else {
+        api.ready = true;   // older builds return nothing
+      }
+    }catch(e){
+      api.initStarted = false;
+      toast("The App Store didn't start: " + msg(e));
+    }
+  }
+
+  function init(){
+    var P = window.CdvPurchase;
+    if(!P || !P.store){ toast("In-app purchases aren't available on this device."); return; }
+    var store = P.store;
+    api.store = store;
+
+    try{
+      store.register([{ id: PRODUCT_ID, type: P.ProductType.NON_CONSUMABLE, platform: P.Platform.APPLE_APPSTORE }]);
+    }catch(e){ api.initError = "register failed: " + msg(e); }
+
+    /* Purchase path.
+
+       There is NO .verified() hook here any more, and nothing calls t.verify(). That pair
+       is what gave Pro away on a fresh install, with no purchase and no tap:
+
+         - With StoreKit 1 the Apple adapter sets needAppReceipt=true, so the application
+           receipt carries a virtual transaction (id "appstore.application") whose state is
+           APPROVED and whose single "product" is the app's BUNDLE id.
+         - StoreAdapterListener fires .approved() for every APPROVED transaction it sees,
+           that one included — on every launch, as soon as the receipt loads.
+         - t.verify() with no validator is not verification: Validator.runOnReceipt() has an
+           explicit "no validator -> consider the receipt verified" branch, so .verified()
+           fired immediately...
+         - ...and the old handler granted on it WITHOUT checking which product the receipt
+           was for. Launch the app, Pro is on. Exactly what App Review reported.
+
+       Now: finish what Apple hands us (finishing is not granting — it just stops StoreKit
+       re-delivering the transaction, and the plugin expects the virtual one to be finished
+       too), then ask the receipts whether anything is actually owned. txProvesPurchase()
+       throws out both the application transaction and the in-progress ones. */
+    listen(store, "approved", function(t){
+      try{ t.finish(); }catch(e){ toast("Couldn't complete the purchase: " + msg(e)); }
+      checkOwned("approved");
+    });
+    listen(store, "finished", function(){ checkOwned("finished"); });
+
+    /* Ownership path — reinstall, second device, or Restore. v13 replaced .owned() with
+       receipt/product update hooks; attach every one that exists so we can't miss the
+       moment the receipt lands. checkOwned() is guarded and grant() is idempotent, so
+       firing several times is harmless.
+
+       Each hook gets its OWN function object on purpose: the plugin's Callbacks.push()
+       throws "REGISTERING THE SAME CALLBACK TWICE" when it sees a reference it already
+       holds, and these three feed different callback lists today but needn't forever. */
+    listen(store, "receiptUpdated", function(){ checkOwned("receiptUpdated"); });
+    listen(store, "receiptsReady", function(){ checkOwned("receiptsReady"); });
+    listen(store, "productUpdated", function(){ checkOwned("productUpdated"); });
+
+    try{
+      store.error(function(err){
+        var code = err && err.code, m = (err && err.message) || "unknown error";
+        // A user tapping Cancel on the StoreKit sheet is not an error worth shouting about.
+        try{ if(P.ErrorCode && code === P.ErrorCode.PAYMENT_CANCELLED) return; }catch(e){}
+        toast("App Store error: " + m);
+      });
+    }catch(e){ api.initError = api.initError || ("error handler failed: " + msg(e)); }
+
+    // Must always run, no matter what any listener above did.
+    startStore();
+
+    /* No paywall-copy rewrite here on purpose. The production string is static in the
+       markup, so the native app shows the correct text from first paint — before this
+       bridge has loaded, and even if it never does. */
+  }
+
+  /* Wait for the plugin bridge without ever assuming when it lands. */
+  (function whenPluginReady(){
+    var done = false;
+    /* Last line of defence: if init() ever throws again, say so out loud rather than
+       leaving a button that does nothing. */
+    function go(){
+      if(done) return;
+      if(window.CdvPurchase && window.CdvPurchase.store){
+        done = true;
+        try{ init(); }
+        catch(e){
+          api.initError = msg(e);
+          toast("In-app purchases couldn't start: " + msg(e));
+          try{ console.error("[IAP] init() threw:", e); }catch(_){}
+        }
+      }
+    }
+    go();                                             // already injected?
+    if(done) return;
+    document.addEventListener("deviceready", go, false);   // the normal signal
+    var tries = 0;
+    var iv = setInterval(function(){                  // belt-and-braces: deviceready can be missed
+      tries++; go();
+      if(done || tries > 100){                        // ~10s
+        clearInterval(iv);
+        if(!done) toast("In-app purchases aren't available right now. Please try again later.");
+      }
+    }, 100);
+  })();
+})();
+
+</script>
+<script>
+/* Web build only (tools/build-web.mjs): the Pro sheet points at the App Store. */
+(function(){
+  var STORE = "https://apps.apple.com/app/apple-store/id6787716007?pt=129125244&mt=8&ct=web-pro";
+  function q(id){ return document.getElementById(id); }
+  var buy = q("pwBuy"), restore = q("pwRestore");
+  if(buy){
+    buy.textContent = "Get ChordLoop for iPhone";
+    // Capture phase + stopImmediatePropagation: the app's own handler would show
+    // "purchases are only available in the app" — here we take them to the app instead.
+    buy.addEventListener("click", function(e){ e.stopImmediatePropagation(); window.open(STORE, "_blank", "noopener"); }, true);
+  }
+  if(restore) restore.style.display = "none";
+  setTimeout(function(){
+    var note = document.querySelector("#paywall .pw-note");
+    if(note) note.textContent = "Pro is part of the ChordLoop iPhone app: a one-time unlock, no subscription, no account.";
+  }, 1500);
+})();
+</script>
+</body>
+</html>
