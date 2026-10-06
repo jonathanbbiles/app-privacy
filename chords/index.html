@@ -2956,6 +2956,17 @@
 
   loadLook(); applyLook(); renderInstSel();
   renderKeySelect(); buildChords(); renderPalette(); renderProg(); renderPresets(); renderSaved(); refreshLocks();
+  /* Web build only (tools/build-web.mjs): open a progression named in the URL. */
+  (function(){ try{
+    var q = new URLSearchParams(location.search); if(!q.has("prog")) return;
+    var root = parseInt(q.get("key"), 10), mode = q.get("mode") === "minor" ? "minor" : "major";
+    var prog = q.get("prog").split(",").map(Number)
+      .filter(function(n){ return n >= 0 && n < 7 && n === Math.floor(n); }).slice(0, 16);
+    if(!(root >= 0 && root < 12) || !prog.length) return;
+    var bpm = parseInt(q.get("bpm"), 10); if(!(bpm >= 50 && bpm <= 180)) bpm = 92;
+    openSaved({ name: (q.get("name") || (NOTE[root] + " " + mode)).slice(0, 60), root: root, mode: mode,
+                prog: prog, sevenths: q.get("sev") === "1", bpm: bpm });
+  }catch(e){} })();
 
   /* Start decoding at launch instead of waiting for the first tap.
      An AudioContext may be CREATED without a user gesture (it just starts suspended) and
