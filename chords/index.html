@@ -419,6 +419,40 @@
     *,*:before,*:after{animation-duration:.001ms !important; animation-iteration-count:1 !important;
       transition-duration:.001ms !important;}
   }
+
+  /* ---------------- big screens: iPad and iPhone Duo (2026-10) ----------------
+     Width-only rules, no device sniffing; below 600px nothing changes, so every iPhone is
+     exactly as before. Jonathan, 2026-10-11: on iPad the app "doesn't cover the whole
+     screen and in landscape it doesn't change the layout". So:
+       >=600  (Duo open ~670, iPad slide-over/split): one column, full width.
+       >=760  (iPad portrait 744-1032, Duo sideways ~950): two columns — the pads you tap
+              on the left, what they become (your loop) and how it sounds on the right.
+       >=1100 (iPad landscape 1133-1366): three columns — pads | loop | sound — so turning
+              the iPad visibly rearranges the studio instead of stretching it. */
+  @media (min-width:600px){
+    body{max-width:none; padding-inline:max(22px,env(safe-area-inset-left));}
+    .tbar{max-width:none;}
+    .chip{padding-block:15px 13px;}
+  }
+  @media (min-width:760px){
+    .chords{gap:12px;}
+    .chip{font-size:1.3em; padding-block:30px 24px;}
+    #panelBuild:not([hidden]){display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+      column-gap:20px; align-items:start;}
+    #panelBuild > .keybar{grid-column:1 / -1;}
+    #panelBuild > .card:not(#progCard):not(#soundCard){grid-column:1; grid-row:2 / span 2;}
+    #panelBuild > #progCard{grid-column:2; grid-row:2;}
+    #panelBuild > #soundCard{grid-column:2; grid-row:3;}
+    #panelIdeas:not([hidden]), #panelSettings:not([hidden]){display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:20px; align-items:start;}
+  }
+  @media (min-width:1100px){
+    #panelBuild:not([hidden]){grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.9fr);}
+    #panelBuild > .card:not(#progCard):not(#soundCard){grid-row:2;}
+    #panelBuild > #progCard{grid-column:2; grid-row:2;}
+    #panelBuild > #soundCard{grid-column:3; grid-row:2;}
+    #panelIdeas:not([hidden]), #panelSettings:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
 </style>
 </head>
 <body>
@@ -3425,6 +3459,25 @@
     buy.addEventListener("click", function(e){ e.stopImmediatePropagation(); window.open(STORE, "_blank", "noopener"); }, true);
   }
   if(restore) restore.style.display = "none";
+  /* Embedded in jonathanscribbles.com/chords and the progression pages: report the app's
+     full height so the page sizes the iframe to it. A fixed-height iframe meant a scroller
+     inside a scroller, and on iPad Safari the loop and the Play bar could not be reached
+     (Jonathan, 2026-10-11). One page scroll instead; the bar then sits under the app. */
+  if (window.self !== window.top) {
+    var last = 0;
+    var report = function(){
+      var h = 0, kids = document.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        var cs = getComputedStyle(kids[i]);
+        if (cs.position === "fixed" || cs.display === "none") continue;
+        h = Math.max(h, kids[i].getBoundingClientRect().bottom + window.scrollY);
+      }
+      h = Math.ceil(h + parseFloat(getComputedStyle(document.body).paddingBottom || 0));
+      if (Math.abs(h - last) > 2) { last = h; parent.postMessage({ chordloopHeight: h }, "*"); }
+    };
+    if (window.ResizeObserver) new ResizeObserver(report).observe(document.body);
+    window.addEventListener("load", report); setInterval(report, 1500); report();
+  }
   setTimeout(function(){
     var note = document.querySelector("#paywall .pw-note");
     if(note) note.textContent = "Pro is part of the ChordLoop iPhone app: a one-time unlock, no subscription, no account.";
